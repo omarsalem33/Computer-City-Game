@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PC City: Engineer's Journey — Final Edition</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; background:#05050f; color:#fff; user-select:none; }
+
+#city-view {
+  position:fixed; inset:0; overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 10%, #1a1a4a 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, #2a1050 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, #0a2040 0%, transparent 50%),
+    linear-gradient(180deg, #050515 0%, #0a0a2a 60%, #05050f 100%);
+}
+.star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; animation:twinkle 3s infinite; pointer-events:none; }
+@keyframes twinkle { 0%,100%{opacity:0.15;} 50%{opacity:1;} }
+
+#ground { position:absolute; bottom:0; left:0; right:0; height:38%;
+  background:linear-gradient(180deg,#0f0f25 0%,#05050f 100%);
+  border-top:3px solid #4facfe; box-shadow:0 -15px 50px rgba(79,172,254,0.35); pointer-events:none; }
+#ground::before { content:''; position:absolute; top:38%; left:0; right:0; height:5px;
+  background:repeating-linear-gradient(90deg,#ffd700 0 45px, transparent 45px 90px); opacity:0.55; }
+#ground::after { content:''; position:absolute; bottom:8%; left:0; right:0; height:2px;
+  background:repeating-linear-gradient(90deg,#00f2fe 0 25px, transparent 25px 50px); opacity:0.3; }
+
+.building {
+  position:absolute; bottom:38%; width:175px; height:210px;
+  background:linear-gradient(145deg,#2a2a5a,#15153a);
+  border:3px solid #4facfe; border-radius:14px 14px 5px 5px;
+  cursor:pointer; transition:transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  padding-top:15px; display:flex; flex-direction:column; align-items:center;
+  box-shadow:0 0 25px rgba(79,172,254,0.5), inset 0 0 30px rgba(79,172,254,0.1);
+  z-index:5;
+}
+.building:hover { transform:translateY(-12px);
+  box-shadow:0 0 60px rgba(79,172,254,1), 0 15px 40px rgba(0,0,0,0.7); border-color:#00f2fe; }
+.building.done { border-color:#00e676; box-shadow:0 0 35px rgba(0,230,118,0.9); }
+.building.done::before { content:'✓'; position:absolute; top:-15px; right:-15px;
+  width:36px; height:36px; background:#00e676; color:#05050f; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:1.2em;
+  font-weight:bold; box-shadow:0 0 20px #00e676; z-index:5; }
+.building.locked { opacity:0.42; filter:grayscale(0.9); cursor:not-allowed; }
+.building.locked:hover { transform:none; }
+.building .icon { font-size:3.6em; margin-top:5px; filter:drop-shadow(0 0 10px rgba(79,172,254,0.8)); }
+.building h3 { font-size:0.92em; margin-top:8px; color:#fff; text-align:center; padding:0 6px; line-height:1.2; }
+.building .sub { font-size:0.7em; color:#8a8ab0; margin-top:3px; text-align:center; padding:0 5px; }
+.building .badge { position:absolute; bottom:-14px; left:50%; transform:translateX(-50%);
+  background:#4facfe; color:#05050f; font-size:0.72em; padding:3px 12px; border-radius:12px;
+  font-weight:bold; white-space:nowrap; box-shadow:0 0 15px rgba(79,172,254,0.7); }
+.building.done .badge { background:#00e676; }
+.building.locked .badge { background:#555; }
+.win { position:absolute; width:22px; height:22px; background:#ffd700; border-radius:3px;
+  box-shadow:0 0 12px #ffd700; animation:flicker 2s infinite; pointer-events:none; }
+@keyframes flicker { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+#player { position:absolute; width:60px; height:88px; z-index:50; pointer-events:none;
+  will-change:left, top; filter:drop-shadow(0 0 18px #4facfe); }
+#player .head { width:38px; height:38px; background:linear-gradient(145deg,#ffdbac,#e0b088);
+  border-radius:50%; margin:0 auto; position:relative; box-shadow:0 0 14px rgba(255,219,172,0.7); }
+#player .head .eye { position:absolute; width:7px; height:7px; background:#000; border-radius:50%; top:16px; }
+#player .head .eye.l { left:6px; } #player .head .eye.r { right:6px; }
+#player .head .mouth { position:absolute; width:10px; height:3px; background:#8b4513;
+  border-radius:0 0 5px 5px; bottom:8px; left:50%; transform:translateX(-50%); }
+#player .body { width:46px; height:42px; background:linear-gradient(180deg,#4facfe,#00f2fe);
+  border-radius:12px; margin:3px auto 0; box-shadow:0 0 22px rgba(79,172,254,0.9);
+  position:relative; display:flex; align-items:center; justify-content:center; }
+#player .body::after { content:'⚙'; font-size:20px; filter:brightness(0.4); }
+#player .legs { display:flex; justify-content:space-around; width:46px; margin:0 auto; }
+#player .legs div { width:15px; height:18px; background:#1a1a3a; border-radius:0 0 6px 6px;
+  border-top:2px solid #4facfe; }
+#player.walking .legs div:nth-child(1) { animation:legL 0.3s infinite; }
+#player.walking .legs div:nth-child(2) { animation:legR 0.3s infinite; }
+@keyframes legL { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+@keyframes legR { 0%,100%{transform:translateY(-4px);} 50%{transform:translateY(0);} }
+#shadow { position:absolute; width:50px; height:12px;
+  background:radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%);
+  z-index:49; pointer-events:none; }
+
+#hud { position:fixed; top:12px; left:12px; z-index:200; background:rgba(10,10,30,0.92);
+  border:2px solid #4facfe; border-radius:18px; padding:12px 18px;
+  backdrop-filter:blur(12px); box-shadow:0 0 30px rgba(79,172,254,0.5); }
+#hud h1 { font-size:1.02em; color:#4facfe; letter-spacing:2px; }
+#hud .row { display:flex; gap:14px; margin-top:8px; flex-wrap:wrap; }
+#hud .item { text-align:center; min-width:52px; }
+#hud .item .lbl { font-size:0.6em; color:#8a8ab0; text-transform:uppercase; letter-spacing:1px; }
+#hud .item .val { font-size:1.15em; font-weight:bold; color:#ffd700; }
+#hud .item .val.blue { color:#4facfe; }
+#hud .item .val.green { color:#00e676; }
+
+#xp-bar-container { position:fixed; top:12px; left:50%; transform:translateX(-50%);
+  width:280px; max-width:40vw; z-index:200; }
+#xp-label { text-align:center; font-size:0.72em; color:#a855f7; font-weight:bold; margin-bottom:4px; }
+#xp-bar { height:12px; background:rgba(10,10,30,0.9); border:2px solid #a855f7;
+  border-radius:20px; overflow:hidden; }
+#xp-fill { height:100%; background:linear-gradient(90deg,#a855f7,#ec4899,#f59e0b);
+  border-radius:20px; transition:width 0.6s; }
+
+#top-btns { position:fixed; top:12px; right:12px; z-index:200; display:flex; gap:8px; flex-wrap:wrap; }
+.top-btn { background:rgba(10,10,30,0.92); border:2px solid #4facfe; color:#4facfe;
+  padding:9px 14px; border-radius:12px; cursor:pointer; font-size:0.78em; font-weight:bold;
+  backdrop-filter:blur(10px); transition:0.3s; font-family:inherit; }
+.top-btn:hover { background:#4facfe; color:#05050f; }
+.top-btn.gold { border-color:#ffd700; color:#ffd700; }
+.top-btn.gold:hover { background:#ffd700; color:#05050f; }
+.top-btn.green { border-color:#00e676; color:#00e676; }
+.top-btn.green:hover { background:#00e676; color:#05050f; }
+.top-btn.purple { border-color:#a855f7; color:#a855f7; }
+.top-btn.purple:hover { background:#a855f7; color:#fff; }
+.top-btn.red { border-color:#ff5252; color:#ff5252; }
+.top-btn.red:hover { background:#ff5252; color:#fff; }
+
+#controls-hint { position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  background:rgba(10,10,30,0.92); border:1px solid #4facfe; border-radius:30px;
+  padding:8px 22px; color:#b8b8d0; font-size:0.8em; z-index:200;
+  text-align:center; white-space:nowrap; }
+#controls-hint kbd { background:#4facfe; color:#05050f; padding:2px 8px; border-radius:5px;
+  font-weight:bold; margin:0 2px; font-size:0.9em; }
+
+#nearby-prompt { position:absolute; z-index:100; display:none;
+  background:linear-gradient(90deg,#ffd700,#ffb300); color:#05050f;
+  padding:8px 18px; border-radius:22px; font-weight:bold; font-size:0.88em;
+  animation:pulse 1s infinite; white-space:nowrap;
+  box-shadow:0 0 25px #ffd700; pointer-events:none; }
+@keyframes pulse { 0%,100%{transform:translate(-50%,-100%) scale(1);} 50%{transform:translate(-50%,-100%) scale(1.08);} }
+
+#modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.94);
+  z-index:1000; justify-content:center; align-items:center; padding:15px; }
+#modal-overlay.active { display:flex; }
+#modal { background:linear-gradient(145deg,#141432,#0a0a20);
+  border:2px solid #4facfe; border-radius:25px; max-width:900px; width:100%;
+  max-height:94vh; overflow-y:auto; padding:28px; position:relative;
+  box-shadow:0 0 90px rgba(79,172,254,0.7); animation:modalIn 0.4s; }
+@keyframes modalIn { from{transform:scale(0.85);opacity:0;} to{transform:scale(1);opacity:1;} }
+#modal::-webkit-scrollbar { width:8px; }
+#modal::-webkit-scrollbar-thumb { background:#4facfe; border-radius:10px; }
+
+#close-modal { position:absolute; top:15px; right:20px; background:rgba(255,82,82,0.2);
+  border:1px solid #ff5252; color:#ff5252; width:38px; height:38px;
+  border-radius:50%; font-size:1.2em; cursor:pointer; z-index:10; }
+#close-modal:hover { background:#ff5252; color:#fff; }
+
+.m-header { display:flex; align-items:center; gap:15px; margin-bottom:15px;
+  padding-bottom:15px; border-bottom:2px solid rgba(79,172,254,0.3); }
+.m-header .m-icon { font-size:3.2em; }
+.m-header h2 { font-size:1.55em; color:#4facfe; }
+.m-header p { font-size:0.85em; color:#b8b8d0; margin-top:3px; }
+
+.progress-wrap { background:rgba(255,255,255,0.1); height:8px; border-radius:20px;
+  margin:12px 0; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,#4facfe,#00f2fe);
+  transition:width 0.5s; border-radius:20px; }
+
+.q-box { background:rgba(255,255,255,0.04); border-radius:16px;
+  padding:22px; border-left:5px solid #4facfe; }
+.q-num { font-size:0.75em; color:#8a8ab0; text-transform:uppercase;
+  letter-spacing:2px; margin-bottom:8px; }
+.q-text { font-size:1.12em; line-height:1.6; margin-bottom:18px; color:#e0e0ff; }
+
+.options { display:flex; flex-direction:column; gap:10px; }
+.option { background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.12);
+  padding:14px 18px; border-radius:12px; cursor:pointer; transition:0.25s;
+  font-size:0.98em; color:#d0d0f0; text-align:left; font-family:inherit; }
+.option:hover:not(.dis) { background:rgba(79,172,254,0.15);
+  border-color:#4facfe; transform:translateX(6px); }
+.option.correct { background:rgba(0,230,118,0.25); border-color:#00e676;
+  color:#00e676; font-weight:bold; }
+.option.wrong { background:rgba(255,82,82,0.2); border-color:#ff5252; color:#ff5252; }
+.option.dis { cursor:not-allowed; opacity:0.6; }
+
+.fb { margin-top:15px; padding:16px; border-radius:12px; font-size:0.95em;
+  line-height:1.6; display:none; }
+.fb.show { display:block; animation:fbIn 0.4s; }
+@keyframes fbIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+.fb.clue { background:rgba(255,193,7,0.15); border-left:5px solid #ffc107; color:#ffe082; }
+.fb.correct { background:rgba(0,230,118,0.15); border-left:5px solid #00e676; color:#a0ffc0; }
+.fb .expl-box { margin-top:14px; padding:14px; background:rgba(79,172,254,0.12);
+  border-left:4px solid #4facfe; border-radius:10px; color:#cfe6ff; line-height:1.6; }
+.fb .expl-box .expl-title { color:#4facfe; font-weight:bold; margin-bottom:6px; }
+
+.next-btn { display:none; margin-top:20px; padding:14px 42px; border:none;
+  border-radius:50px; background:linear-gradient(90deg,#4facfe,#00f2fe);
+  color:#05050f; font-size:1em; font-weight:bold; cursor:pointer;
+  font-family:inherit; }
+.next-btn.show { display:inline-block; }
+.next-btn:hover { transform:scale(1.06); }
+
+#final-screen { display:none; position:fixed; inset:0; z-index:2000;
+  background:radial-gradient(circle at center,#1a1a4a,#05050f);
+  justify-content:center; align-items:center; flex-direction:column;
+  text-align:center; padding:30px; overflow-y:auto; }
+#final-screen.show { display:flex; }
+#final-screen .trophy { font-size:7em; filter:drop-shadow(0 0 40px #ffd700); }
+#final-screen h1 { font-size:2.8em; background:linear-gradient(90deg,#ffd700,#ff8c00);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin:15px 0; letter-spacing:3px; }
+#final-screen .score { font-size:1.9em; color:#4facfe; margin:15px 0; }
+#final-screen .msg { font-size:1.05em; color:#b8b8d0; max-width:650px;
+  line-height:1.7; margin-bottom:15px; }
+#final-screen .replay { margin-top:20px; padding:14px 40px; border:none;
+  border-radius:50px; background:linear-gradient(90deg,#4facfe,#00f2fe);
+  color:#05050f; font-size:1.05em; font-weight:bold; cursor:pointer; font-family:inherit; }
+
+#achv-overlay, #picker-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.94);
+  z-index:1500; justify-content:center; align-items:center; padding:20px;
+  overflow-y:auto; }
+#achv-overlay.active, #picker-overlay.active { display:flex; }
+.panel { background:linear-gradient(145deg,#141432,#0a0a20); border:2px solid #a855f7;
+  border-radius:25px; max-width:1000px; width:100%; padding:30px;
+  max-height:90vh; overflow-y:auto; }
+.panel h2 { color:#a855f7; text-align:center; margin-bottom:8px; font-size:1.7em; }
+.panel .sub { text-align:center; color:#b8b8d0; margin-bottom:20px; font-size:0.9em; }
+.achv-grid, .picker-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; }
+.achv-card, .picker-card { background:rgba(255,255,255,0.05); border:2px solid rgba(168,85,247,0.3);
+  border-radius:16px; padding:16px; text-align:center; }
+.achv-card.unlocked { border-color:#ffd700; background:rgba(255,215,0,0.08); }
+.achv-card.locked { opacity:0.5; filter:grayscale(0.6); }
+.achv-card .ai { font-size:2.4em; margin-bottom:6px; }
+.achv-card .an { font-size:0.95em; color:#fff; font-weight:bold; margin-bottom:4px; }
+.achv-card .ad { font-size:0.75em; color:#8a8ab0; }
+.picker-card { border-color:rgba(79,172,254,0.3); cursor:pointer; transition:0.3s; }
+.picker-card:hover { border-color:#4facfe; background:rgba(79,172,254,0.15);
+  transform:translateY(-5px); }
+.picker-card .pi { font-size:2.4em; margin-bottom:8px; }
+.picker-card .pn { font-size:1em; color:#fff; font-weight:bold; margin-bottom:5px; }
+.picker-card .ps { font-size:0.78em; color:#8a8ab0; }
+.panel-close { margin-top:20px; padding:12px 30px; border:2px solid #ff5252;
+  background:transparent; color:#ff5252; border-radius:50px; cursor:pointer;
+  font-weight:bold; font-family:inherit; display:block; margin-left:auto; margin-right:auto; }
+.panel-close:hover { background:#ff5252; color:#fff; }
+
+#toast { position:fixed; top:20%; left:50%; transform:translate(-50%,-50%) scale(0.8);
+  background:linear-gradient(90deg,#00e676,#00b0ff); color:#05050f;
+  padding:16px 38px; border-radius:20px; font-size:1.1em; font-weight:bold;
+  z-index:5000; opacity:0; pointer-events:none; transition:0.4s;
+  text-align:center; max-width:90vw; }
+#toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+#toast.gold { background:linear-gradient(90deg,#ffd700,#ff8c00); }
+
+.puzzle { padding:15px; }
+.puzzle-title { font-size:1.05em; color:#4facfe; margin-bottom:12px; text-align:center; }
+.drop-zone { background:rgba(79,172,254,0.08); border:3px dashed #4facfe;
+  border-radius:15px; padding:20px; min-height:130px; margin-bottom:15px;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center;
+  transition:0.3s; }
+.drop-zone.over { background:rgba(79,172,254,0.25); border-color:#00f2fe; }
+.draggable { background:linear-gradient(145deg,#2a2a5a,#1a1a3a);
+  border:2px solid #4facfe; padding:10px 14px; border-radius:10px; cursor:grab;
+  font-size:0.85em; color:#fff; text-align:center; }
+.draggable .di { font-size:1.6em; display:block; }
+.draggable.correct { border-color:#00e676; background:linear-gradient(145deg,#0d3320,#1a4d30); }
+.draggable.wrong-shake { animation:shake 0.5s; }
+@keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+#levelup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
+  padding:30px 60px; background:linear-gradient(135deg,#a855f7,#ec4899);
+  color:#fff; font-size:2em; font-weight:bold; border-radius:20px;
+  z-index:4000; pointer-events:none; text-align:center; letter-spacing:2px; }
+#levelup.show { animation:levelupPop 2s forwards; }
+@keyframes levelupPop {
+  0% { transform:translate(-50%,-50%) scale(0) rotate(-10deg); }
+  20% { transform:translate(-50%,-50%) scale(1.1) rotate(3deg); }
+  40% { transform:translate(-50%,-50%) scale(1) rotate(0); }
+  80% { opacity:1; }
+  100% { opacity:0; transform:translate(-50%,-50%) scale(1.2); }
+}
+
+@media (max-width:700px) {
+  .building { width:120px; height:150px; }
+  .building .icon { font-size:2.2em; }
+  .building h3 { font-size:0.72em; }
+  .building .sub { display:none; }
+  #player { width:44px; height:64px; }
+  #hud h1 { font-size:0.85em; }
+  #hud .item .val { font-size:0.95em; }
+  #controls-hint { font-size:0.68em; padding:6px 14px; }
+  .top-btn { font-size:0.68em; padding:6px 9px; }
+  #xp-bar-container { width:200px; }
+}
+</style>
+</head>
+<body>
+
+<div id="city-view">
+  <div id="ground"></div>
+  <div id="shadow"></div>
+  <div id="player">
+    <div class="head">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <div class="body"></div>
+    <div class="legs"><div></div><div></div></div>
+  </div>
+  <div id="nearby-prompt">Press <kbd>E</kbd> to Enter</div>
+</div>
+
+<div id="hud">
+  <h1>🏙️ PC CITY</h1>
+  <div class="row">
+    <div class="item"><div class="lbl">Score</div><div class="val" id="score">0</div></div>
+    <div class="item"><div class="lbl">Coins</div><div class="val" id="coins">0</div></div>
+    <div class="item"><div class="lbl">Districts</div><div class="val blue" id="missions">0/7</div></div>
+    <div class="item"><div class="lbl">Streak</div><div class="val green" id="streak">0</div></div>
+  </div>
+</div>
+
+<div id="xp-bar-container">
+  <div id="xp-label">Lv <span id="lvl">1</span> — <span id="title">Trainee</span> · <span id="xp">0</span> XP</div>
+  <div id="xp-bar"><div id="xp-fill" style="width:0%"></div></div>
+</div>
+
+<div id="top-btns">
+  <button class="top-btn gold" onclick="openPicker()">🗺️ Districts</button>
+  <button class="top-btn purple" onclick="openAchievements()">🏅 Badges</button>
+  <button class="top-btn green" onclick="saveGame()">💾 Save</button>
+  <button class="top-btn red" onclick="resetGame()">🔄 Reset</button>
+</div>
+
+<div id="controls-hint">
+  Move: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> &nbsp;|&nbsp; Enter: <kbd>E</kbd>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <button id="close-modal" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="achv-overlay">
+  <div class="panel">
+    <h2>🏅 Achievements</h2>
+    <p class="sub">Unlock them all!</p>
+    <div class="achv-grid" id="achv-grid"></div>
+    <button class="panel-close" onclick="document.getElementById('achv-overlay').classList.remove('active')">Close</button>
+  </div>
+</div>
+
+<div id="picker-overlay">
+  <div class="panel" style="border-color:#ffd700;">
+    <h2 style="color:#ffd700;">🗺️ District Explorer</h2>
+    <p class="sub">Jump to any unlocked district.</p>
+    <div class="picker-grid" id="picker-grid"></div>
+    <button class="panel-close" onclick="document.getElementById('picker-overlay').classList.remove('active')">Close</button>
+  </div>
+</div>
+
+<div id="final-screen">
+  <div class="trophy">🏆</div>
+  <h1>ENGINEER CERTIFIED!</h1>
+  <div class="score" id="f-score">0 Points</div>
+  <p class="msg" id="f-msg"></p>
+  <p class="msg" id="f-stats"></p>
+  <button class="replay" onclick="location.reload()">🔄 Play Again</button>
+</div>
+
+<div id="toast"></div>
+<div id="levelup">⚡ LEVEL UP! ⚡</div>
+
+<script>
+/* ============================================================
+   PC CITY: ENGINEER'S JOURNEY — FINAL
+   ============================================================ */
+const SAVE_KEY = 'pcCityFinal_v1';
+
+const state = {
+  score: 0, correct: 0, total: 0, streak: 0, bestStreak: 0,
+  coins: 0, xp: 0, level: 1, title: 'Trainee',
+  districtsDone: 0, achievements: {}, districts: []
+};
+
+/* ============= ACHIEVEMENTS ============= */
+const ACHV = [
+  { id:'first', icon:'🥇', name:'First Steps', desc:'Answer your first question', check:s=>s.correct>=1 },
+  { id:'five', icon:'✋', name:'High Five', desc:'5 correct answers', check:s=>s.correct>=5 },
+  { id:'twenty', icon:'💪', name:'Scholar', desc:'20 correct answers', check:s=>s.correct>=20 },
+  { id:'fifty', icon:'🎓', name:'Expert', desc:'50 correct answers', check:s=>s.correct>=50 },
+  { id:'streak5', icon:'🔥', name:'On Fire', desc:'5 correct in a row', check:s=>s.bestStreak>=5 },
+  { id:'streak10', icon:'⚡', name:'Unstoppable', desc:'10 correct in a row', check:s=>s.bestStreak>=10 },
+  { id:'district1', icon:'🚪', name:'City Entered', desc:'Complete City Entrance', check:s=>s.districts[0]?.done },
+  { id:'district2', icon:'🏙️', name:'Board Master', desc:'Complete Motherboard City', check:s=>s.districts[1]?.done },
+  { id:'district3', icon:'🧠', name:'CPU Whisperer', desc:'Complete CPU Command Center', check:s=>s.districts[2]?.done },
+  { id:'district4', icon:'💾', name:'Data Keeper', desc:'Complete Memory & Storage', check:s=>s.districts[3]?.done },
+  { id:'district5', icon:'❄️', name:'Cool Under Pressure', desc:'Complete Cooling Station', check:s=>s.districts[4]?.done },
+  { id:'district6', icon:'⌨️', name:'Peripheral Pro', desc:'Complete Peripheral Plaza', check:s=>s.districts[5]?.done },
+  { id:'district7', icon:'🦺', name:'Safety Champion', desc:'Complete Safety & Emergency', check:s=>s.districts[6]?.done },
+  { id:'rich', icon:'🪙', name:'Coin Collector', desc:'Earn 100 coins', check:s=>s.coins>=100 },
+  { id:'level5', icon:'⭐', name:'Rising Star', desc:'Reach level 5', check:s=>s.level>=5 },
+  { id:'all', icon:'👑', name:'City Master', desc:'Complete all districts', check:s=>s.districts.every(d=>d.done) }
+];
+
+/* ============= Helper ============= */
+function makeQ(q,o,c,clue,e){ return { q, o, c, clue, e }; }
+
+/* ============================================================
+   7 DISTRICTS — every question has q, o, c, clue, and EXPLANATION (e)
+   ============================================================ */
+state.districts = [
+/* ============ 1. CITY ENTRANCE ============ */
+{ id:0, name:"City Entrance", icon:"🚪", sub:"Computer Basics", x:4, unlocked:true, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Sort each item: HARDWARE (touchable) or SOFTWARE (code)",
+    zones:[{id:'hw',label:'🖥️ Hardware',accepts:['keyboard','cpu','monitor','ram']},{id:'sw',label:'💾 Software',accepts:['windows','word','chrome','bios_fw']}],
+    items:[{id:'keyboard',icon:'⌨️',label:'Keyboard'},{id:'windows',icon:'🪟',label:'Windows 11'},{id:'cpu',icon:'🧠',label:'CPU'},{id:'word',icon:'📄',label:'Microsoft Word'},{id:'monitor',icon:'🖥️',label:'Monitor'},{id:'chrome',icon:'🌐',label:'Chrome'},{id:'ram',icon:'💾',label:'RAM'},{id:'bios_fw',icon:'⚡',label:'BIOS Firmware'}] },
+  questions:[
+    makeQ("A computer is an electronic device that processes information. Which describes this BEST?",
+      ["A machine that only plays games","An electronic device that can store, retrieve, and process data","A television with a keyboard","A device for storing paper"], 1,
+      "Think of three verbs: store, retrieve, process.",
+      "A computer is an electronic device that processes information or data. It can <b>store</b> data, <b>retrieve</b> it when needed, and <b>process</b> it to produce useful results. It is not limited to one task — it handles writing, gaming, videos, messaging, and much more."),
+    makeQ("Which type of computer do scientists use to simulate weather?",
+      ["Desktop","Laptop","Supercomputer","Embedded"], 2,
+      "Extreme power for complex calculations.",
+      "A <b>Supercomputer</b> is used by scientists to simulate complex systems like weather patterns and storm predictions. It performs massive parallel calculations far beyond what ordinary computers can handle."),
+    makeQ("A bank processes millions of transactions daily. Which type?",
+      ["Mainframe","Laptop","Tablet","Embedded"], 0,
+      "Massive, reliable bulk transactions.",
+      "A <b>Mainframe Computer</b> is used by banks to process millions of transactions every day. It is designed for extremely high reliability, bulk data processing, and multi-user support."),
+    makeQ("An artist creates detailed graphics for movies. Which type?",
+      ["Server","Workstation","Tablet","Supercomputer"], 1,
+      "More powerful than desktop, not a data center.",
+      "A <b>Workstation</b> is a high-performance computer used by professionals like artists, engineers, and designers. It handles detailed graphics, animations, and 3D rendering — more powerful than a desktop, but not as massive as a server or supercomputer."),
+    makeQ("Which is hardware?",
+      ["Windows 11","The motherboard","Google Chrome","Microsoft Word"], 1,
+      "Physical, tangible — you can touch it.",
+      "<b>Hardware</b> refers to the physical, tangible components of a computer you can see and touch — like the motherboard, CPU, RAM, keyboard, and monitor. Windows, Chrome, and Word are software (programming code)."),
+    makeQ("Which is software?",
+      ["Keyboard","Mouse","Windows 11","Monitor"], 2,
+      "Programming code you can't touch.",
+      "<b>Software</b> is a set of programming code installed on the hard drive that you cannot touch. Examples: Windows 11, Linux, macOS (operating systems), and applications like Word, Chrome, and Photoshop."),
+    makeQ("A student takes a portable computer to school. Which type?",
+      ["Desktop","Laptop","Server","Mainframe"], 1,
+      "Portable, battery-powered, folds.",
+      "A <b>Laptop</b> is a portable, battery-powered computer designed for mobility. Students use it to write essays, do research, and take notes anywhere."),
+    makeQ("A company stores all employee files centrally. Which type?",
+      ["Server","Supercomputer","Laptop","Embedded"], 0,
+      "Provides services over a network.",
+      "A <b>Server</b> is a computer that provides services to other computers over a network. Companies use servers to store and manage employee emails, files, and shared resources centrally."),
+    makeQ("Which statement is TRUE?",
+      ["Both can be touched","Hardware is tangible; software is code","Software is physical","They are identical"], 1,
+      "Only one can be picked up.",
+      "<b>Hardware</b> is physical and tangible — you can touch it. <b>Software</b> is programming code you cannot touch. Both must work together: hardware executes, software instructs."),
+    makeQ("An embedded computer is:",
+      ["A giant data center","A small computer built into another device","A laptop","Only for scientists"], 1,
+      "Built INTO something else.",
+      "An <b>embedded computer</b> is a small computer built into another device to control it — like in a microwave, car engine, smart TV, or washing machine. It performs a dedicated function inside a larger system.")
+  ]
+},
+/* ============ 2. MOTHERBOARD CITY ============ */
+{ id:1, name:"Motherboard City", icon:"🏙️", sub:"Board & Ports", x:18, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Drag each component to its correct location",
+    zones:[{id:'socket',label:'🔲 CPU Socket',accepts:['cpu']},{id:'ram',label:'📏 DIMM Slots',accepts:['ram']},{id:'pcie',label:'🎮 PCIe Slot',accepts:['gpu']},{id:'sata',label:'💽 SATA Port',accepts:['ssd_sata']},{id:'m2',label:'⚡ M.2 Slot',accepts:['nvme']},{id:'cmos',label:'🔋 CMOS Battery',accepts:['cmos']},{id:'psu',label:'🔌 Power',accepts:['psu']},{id:'fan',label:'🌀 Fan Header',accepts:['fan']}],
+    items:[{id:'cpu',icon:'🧠',label:'CPU'},{id:'ram',icon:'💾',label:'RAM'},{id:'gpu',icon:'🎮',label:'GPU'},{id:'ssd_sata',icon:'💽',label:'SATA SSD'},{id:'nvme',icon:'⚡',label:'NVMe'},{id:'cmos',icon:'🔋',label:'CMOS'},{id:'psu',icon:'🔌',label:'24-pin ATX'},{id:'fan',icon:'🌀',label:'Fan'}] },
+  questions:[
+    makeQ("Which socket has PINS on the MOTHERBOARD?",
+      ["PGA","LGA","BGA","AM4"], 1,
+      "Starts with 'Land'.",
+      "<b>LGA (Land Grid Array)</b> has pins on the <b>motherboard socket</b>, while the CPU has flat contact points. It is commonly used by Intel processors (e.g., LGA 1700, LGA 1200)."),
+    makeQ("Which socket has PINS on the PROCESSOR?",
+      ["LGA","PGA","BGA","LGA 1700"], 1,
+      "Pin Grid Array.",
+      "<b>PGA (Pin Grid Array)</b> has pins on the <b>processor itself</b>, which fit into holes on the motherboard socket. It was commonly used by older AMD processors."),
+    makeQ("BGA processors are used in:",
+      ["Desktops","Laptops, tablets, phones","Servers only","Workstations only"], 1,
+      "Portable devices, not upgradable.",
+      "<b>BGA (Ball Grid Array)</b> processors are <b>permanently soldered</b> to the motherboard and cannot be removed or upgraded. They are used in laptops, tablets, and smartphones due to their compact size."),
+    makeQ("Which is an Intel socket?",
+      ["AM4","AM5","LGA 1700","sTR5"], 2,
+      "Intel uses LGA.",
+      "Intel uses <b>LGA</b> sockets such as LGA 1700, LGA 1851, and LGA 1200. AMD uses AM4, AM5, and sTR5. Always verify the socket matches the CPU before buying."),
+    makeQ("A chipset is best described as:",
+      ["The processor","A traffic controller between components","RAM","Power supply"], 1,
+      "Manages traffic, not computing.",
+      "A <b>chipset</b> is a group of chips on the motherboard that controls communication between the CPU, memory, storage, and other components. It acts like a traffic controller."),
+    makeQ("Enthusiasts wanting overclocking choose:",
+      ["Intel B / AMD A","Intel Z / AMD X","Intel H / AMD B","Any"], 1,
+      "'Z' and 'X' are top-tier.",
+      "<b>High-End chipsets</b> (Intel Z Series, AMD X Series) support advanced features, overclocking, and high-performance components. They are designed for gamers, enthusiasts, and professionals."),
+    makeQ("Balanced price and features:",
+      ["High-end","Mainstream (H/B)","Entry-level","None"], 1,
+      "The middle option.",
+      "<b>Mainstream chipsets</b> (Intel H Series, AMD B Series) offer a balance between performance, features, and cost. They are suited for most users and gamers."),
+    makeQ("MOST motherboards have how many RAM slots?",
+      ["1","2 to 4","8","16"], 1,
+      "Small even number.",
+      "Most motherboards have <b>2 to 4 memory slots</b>. High-end workstations and servers may have more. The number of slots determines the maximum RAM capacity you can install."),
+    makeQ("Running many apps at once — best upgrade?",
+      ["More RAM","CMOS battery","Fan","PSU"], 0,
+      "What holds active data?",
+      "<b>Adding more RAM</b> improves performance when running multiple applications at once. RAM stores the data and programs the CPU is currently using."),
+    makeQ("PCIe x16 is primarily for:",
+      ["Sound cards","Graphics cards","Network cards","USB expansion"], 1,
+      "Highest bandwidth.",
+      "<b>PCIe x16</b> slots provide the highest bandwidth and are primarily used for <b>graphics cards (GPUs)</b>. Other PCIe sizes: x1 (sound cards), x4 (SSDs), x8 (network cards)."),
+    makeQ("Sound cards use which PCIe size?",
+      ["x1","x4","x8","x16"], 0,
+      "Smallest slot.",
+      "<b>PCIe x1</b> is used for low-speed devices like sound cards and USB expansion cards."),
+    makeQ("NVMe via adapter uses which PCIe size?",
+      ["x1","x4","x16","x32"], 1,
+      "Middle-ground slot.",
+      "<b>PCIe x4</b> is commonly used for NVMe SSDs via adapters, providing high-speed data transfer."),
+    makeQ("Which storage interface is OBSOLETE?",
+      ["SATA","NVMe","IDE","M.2"], 2,
+      "Very old, slow.",
+      "<b>IDE (Integrated Drive Electronics)</b> is an older standard used in early computers. It is much slower than modern technologies and is now mostly obsolete."),
+    makeQ("NVMe SSDs connect through:",
+      ["SATA","PCIe","USB","IDE"], 1,
+      "Fastest expansion bus.",
+      "<b>NVMe (Non-Volatile Memory Express)</b> SSDs connect through PCIe for very fast data transfer speeds. They are widely used in modern laptops and high-performance PCs."),
+    makeQ("CMOS battery function:",
+      ["Powers CPU","Keeps BIOS settings when off","Cools CPU","Charges RAM"], 1,
+      "Small battery on board.",
+      "The <b>CMOS battery</b> is a small coin-shaped battery on the motherboard. It provides power to the BIOS/UEFI settings (date, time, boot order) when the computer is turned off."),
+    makeQ("Wrong date/time + lost boot settings means:",
+      ["CPU damaged","CMOS battery dead","RAM faulty","PSU broken"], 1,
+      "Battery dead symptom.",
+      "When the <b>CMOS battery dies</b>, the computer may show the wrong date and time and lose saved BIOS settings. It is not rechargeable and must be replaced."),
+    makeQ("Main motherboard power connector:",
+      ["4-pin EPS","24-pin ATX","SATA power","Molex"], 1,
+      "Largest connector.",
+      "The <b>24-pin ATX connector</b> is the main power connector for the motherboard. It supplies different voltages (3.3V, 5V, 12V) to support all motherboard components."),
+    makeQ("CPU EPS connector provides:",
+      ["3.3V","Dedicated 12V","Ground only","5V"], 1,
+      "CPU needs stable voltage.",
+      "The <b>4-pin / 8-pin CPU (EPS) connector</b> provides dedicated 12V power to the CPU for stable performance."),
+    makeQ("SATA power provides which voltages?",
+      ["Only 12V","3.3V, 5V, 12V","Only 5V","Only 3.3V"], 1,
+      "Multiple voltages.",
+      "<b>SATA power connectors</b> provide 3.3V, 5V, and 12V to power modern storage devices like SSDs and HDDs."),
+    makeQ("Older hardware uses which power connector?",
+      ["SATA power","24-pin ATX","Molex","8-pin EPS"], 2,
+      "Older 4-pin rectangular.",
+      "The <b>Molex connector</b> is used for older hardware and legacy components. It provides 5V and 12V."),
+    makeQ("Wired internet uses which port?",
+      ["HDMI","USB","Ethernet","Audio"], 2,
+      "RJ45 connector.",
+      "The <b>Ethernet (RJ45) port</b> connects the computer to the internet using a cable."),
+    makeQ("HDMI/DisplayPort/VGA ports are for:",
+      ["Monitors/TVs","Keyboards","Speakers","Charging"], 0,
+      "Video output.",
+      "<b>HDMI, DisplayPort, and VGA</b> are video output ports used for connecting monitors or TVs."),
+    makeQ("Front panel typically includes:",
+      ["GPU and RAM","Power/reset/USB/audio/LEDs","CPU socket","PCIe slots"], 1,
+      "Buttons and ports on front.",
+      "The <b>front panel</b> of the case includes the power button, reset button, USB ports, audio jacks, and LED indicators for power status and storage activity."),
+    makeQ("Fan headers are used to:",
+      ["Store BIOS","Power/control fans","Connect HDDs","Connect monitors"], 1,
+      "Fans plug into CPU_FAN/SYS_FAN.",
+      "<b>Fan headers</b> on the motherboard power cooling fans (CPU_FAN, SYS_FAN/CHA_FAN, CPU_OPT) and control fan speed automatically based on temperature."),
+    makeQ("CPU_FAN header is special because:",
+      ["Only case fans","Most PCs won't boot without it detected","Optional","For RGB"], 1,
+      "Prevents CPU damage.",
+      "The <b>CPU_FAN header</b> is required for booting in most PCs. The motherboard checks it to prevent CPU damage from overheating. If no CPU fan is detected, the system may refuse to start."),
+    makeQ("Integrated network controllers provide:",
+      ["Sound","Wired/Wi-Fi internet","Graphics","RAM"], 1,
+      "Network communication.",
+      "<b>Integrated network controllers</b> provide internet connection through Ethernet cable or built-in Wi-Fi. They allow fast and stable communication with networks."),
+    makeQ("Integrated audio controllers manage:",
+      ["Video","Sound I/O","Networking","Storage"], 1,
+      "Speakers/headphones/mics.",
+      "<b>Integrated audio controllers</b> manage sound output and input, enabling speakers, headphones, and microphones to work directly from the motherboard."),
+    makeQ("Multi-CPU motherboard means:",
+      ["Many PCIe slots","Two or more CPU sockets","Extra RAM","Laptop board"], 1,
+      "Multiple processors on one board.",
+      "A <b>multi-CPU motherboard</b> has two or more CPU sockets for extra processing power. It provides very high performance for tasks like virtualization, large databases, and scientific computing."),
+    makeQ("Multi-CPU systems are rare at home because:",
+      ["Illegal","Expensive, high power, specialized","Too slow","Linux-only"], 1,
+      "Modern multi-core CPUs are cheaper.",
+      "Multi-CPU systems are more expensive, use more power, and require specialized hardware and software. Today, multi-core processors offer excellent performance at lower cost, so multi-CPU systems are mainly for enterprise and data centers."),
+    makeQ("Which is NOT a motherboard component?",
+      ["CPU socket","RAM slots","PCIe slots","Monitor screen"], 3,
+      "External peripheral.",
+      "The <b>monitor screen</b> is an external output peripheral, not a component of the motherboard. The motherboard contains the CPU socket, RAM slots, PCIe slots, and other internal components.")
+  ]
+},
+/* ============ 3. CPU COMMAND CENTER ============ */
+{ id:2, name:"CPU Command Center", icon:"🧠", sub:"Inside the CPU", x:32, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Drag each CPU part to its correct role",
+    zones:[{id:'cu',label:'🎛️ Control Unit',accepts:['cu']},{id:'alu',label:'🧮 ALU',accepts:['alu']},{id:'mem',label:'📦 Memory Unit',accepts:['mem']},{id:'l1',label:'⚡ L1 Cache',accepts:['l1']},{id:'l2',label:'💨 L2 Cache',accepts:['l2']},{id:'l3',label:'🗄️ L3 Cache',accepts:['l3']}],
+    items:[{id:'cu',icon:'🎛️',label:'Controls operations'},{id:'alu',icon:'🧮',label:'Performs +,-,×,÷'},{id:'mem',icon:'📦',label:'Stores data & instructions'},{id:'l1',icon:'⚡',label:'Fastest, smallest cache'},{id:'l2',icon:'💨',label:'Larger than L1, backup cache'},{id:'l3',icon:'🗄️',label:'Largest, shared among cores'}] },
+  questions:[
+    makeQ("CPU is called the brain because:",
+      ["Stores files","Performs calculations and processes instructions","Supplies power","Cools itself"], 1,
+      "What does it DO with data?",
+      "The <b>CPU (Central Processing Unit)</b> is considered the brain of the computer because it performs most calculations and processes instructions. It controls the operation of all parts of the computer."),
+    makeQ("Three main CPU components:",
+      ["RAM, ROM, Cache","Memory Unit, Control Unit, ALU","GPU, PSU, Fan","Socket, Chipset, BIOS"], 1,
+      "Store, control, calculate.",
+      "The CPU has three main components: <b>Memory/Storage Unit</b> (stores data and instructions), <b>Control Unit</b> (controls operations but does not process), and <b>Arithmetic Logic Unit (ALU)</b> (performs calculations and logic)."),
+    makeQ("Which CPU part does arithmetic and logic?",
+      ["Control Unit","ALU","Cache","Memory"], 1,
+      "Arithmetic + Logic.",
+      "The <b>ALU (Arithmetic Logic Unit)</b> performs all arithmetic operations (+, -, ×, ÷) and logic comparisons (=, >, <). All calculations take place here."),
+    makeQ("Which controls but does NOT process?",
+      ["ALU","Control Unit","Cache","RAM"], 1,
+      "Directs traffic.",
+      "The <b>Control Unit (CU)</b> controls the operations of all parts of the computer but does NOT carry out any actual data processing. It directs data flow to the ALU."),
+    makeQ("Which stores data, instructions, and results?",
+      ["Control Unit","Memory Unit","ALU","Socket"], 1,
+      "Intermediate results go here.",
+      "The <b>Memory/Storage Unit</b> stores data, instructions, and intermediate results. It also stores the final results before they are released to an output device."),
+    makeQ("Calculation flow:",
+      ["RAM→GPU→Output","CU directs ALU, results to memory, then output","ALU→Socket→Monitor","Cache→PSU→RAM"], 1,
+      "Control directs, ALU calculates.",
+      "When a calculation is needed, the <b>Control Unit</b> transfers data from storage to the <b>ALU</b>. After computation, results go back to the <b>Memory Unit</b>, then to the output device."),
+    makeQ("Control Unit statement TRUE:",
+      ["Does multiplication","Controls all parts but doesn't process","Stores permanently","Cools CPU"], 1,
+      "Control ≠ computation.",
+      "The <b>Control Unit</b> controls the operations of all parts of the computer but does not carry out any actual data processing operations. It directs traffic."),
+    makeQ("Cache memory is:",
+      ["Large permanent storage","Small high-speed storage near CPU","Slow RAM","Network protocol"], 1,
+      "Small, fast, close, frequent.",
+      "<b>Cache memory</b> is a small, high-speed storage area that keeps frequently used data and instructions close to the CPU, allowing much faster access than main RAM."),
+    makeQ("Fastest cache level:",
+      ["L1","L2","L3","RAM"], 0,
+      "Closest to core.",
+      "<b>L1 Cache (Level 1)</b> is the fastest cache memory, located closest to the CPU core. It stores frequently used instructions and data."),
+    makeQ("Smallest cache level:",
+      ["L1","L2","L3","All same"], 0,
+      "Faster = smaller.",
+      "<b>L1 Cache</b> is the smallest in size but fastest in speed because it is closest to the CPU core."),
+    makeQ("Cache shared among cores:",
+      ["L1","L2","L3","ROM"], 2,
+      "Largest and shared.",
+      "<b>L3 Cache (Level 3)</b> is the largest cache level and is shared among multiple CPU cores. It is slower than L1 and L2 but still faster than RAM."),
+    makeQ("Why is L1 smallest?",
+      ["Oldest","Fastest is expensive and space-limited","Only 1 instruction","It's RAM"], 1,
+      "Faster + smaller = pricier.",
+      "<b>L1 Cache</b> is smallest because the fastest memory is expensive and there is limited physical space near the CPU core. Smaller and closer = faster but more costly."),
+    makeQ("Backup cache when L1 misses:",
+      ["L2","L3","RAM","ROM"], 0,
+      "Second level.",
+      "<b>L2 Cache (Level 2)</b> is larger than L1 but slightly slower. It acts as a backup when data is not found in L1."),
+    makeQ("Fastest to slowest:",
+      ["L1, L2, L3, RAM","RAM, L1, L2, L3","L3, L2, L1, RAM","RAM, L3, L2, L1"], 0,
+      "Cache levels ordered.",
+      "Order of speed from fastest to slowest: <b>L1 → L2 → L3 → RAM</b>. Each level is larger and slower than the one before it."),
+    makeQ("If not in any cache, CPU looks in:",
+      ["L1","L2","L3","RAM"], 3,
+      "Main memory.",
+      "After checking all cache levels (L1, L2, L3) and finding no match, the CPU looks in <b>RAM (main memory)</b>. This is much slower than cache."),
+    makeQ("Which is NOT a CPU manufacturer?",
+      ["Intel","AMD","Qualcomm","NVIDIA"], 3,
+      "Famous for GPUs.",
+      "CPU manufacturers/designers include <b>Intel, AMD, Qualcomm, MediaTek</b>, and others. <b>NVIDIA</b> is famous for <b>GPUs (graphics cards)</b>, not CPUs."),
+    makeQ("Caching purpose includes:",
+      ["More storage","Faster access, less latency","Cooling","Power"], 1,
+      "Speed, not capacity.",
+      "Caching improves: <b>Faster access</b> (frequent data available quickly), <b>Reduced latency</b> (less wait time), <b>Better UX</b> (apps respond faster), and <b>Increased reliability</b>. It is about SPEED, not storage capacity."),
+    makeQ("Program slow due to repeated RAM access. Cache helps by:",
+      ["Storing frequent data close","Adding RAM","Cooling","Adding GPU"], 0,
+      "Keeps frequent data close.",
+      "If a program repeatedly accesses the same data from RAM, cache helps by storing that <b>frequently used data close to the CPU</b>, allowing much faster access and reducing latency."),
+    makeQ("Which two units interact with memory during calc?",
+      ["CU and ALU","GPU and RAM","PSU and Fan","Socket and Chipset"], 0,
+      "Control + calculate.",
+      "During calculations, the <b>Control Unit</b> directs data to the <b>ALU</b>. The ALU performs calculations, and the Control Unit transfers results back to memory."),
+    makeQ("CPU as brain because it:",
+      ["Stores files","Controls all parts","Converts AC","Displays images"], 1,
+      "CONTROLS.",
+      "The CPU is called the brain because it <b>controls the operation of all parts of the computer</b>. It performs calculations, processes instructions, and manages data flow.")
+  ]
+},
+/* ============ 4. MEMORY & STORAGE ============ */
+{ id:3, name:"Memory & Storage", icon:"💾", sub:"RAM · HDD · SSD", x:46, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Classify: Primary / Secondary / ROM",
+    zones:[{id:'primary',label:'⚡ Primary',accepts:['ram','cache']},{id:'secondary',label:'💽 Secondary',accepts:['hdd','ssd','nvme','usb']},{id:'rom',label:'📘 ROM',accepts:['bios']}],
+    items:[{id:'ram',icon:'💾',label:'RAM'},{id:'cache',icon:'⚡',label:'L1 Cache'},{id:'hdd',icon:'💿',label:'HDD'},{id:'ssd',icon:'📀',label:'SSD'},{id:'nvme',icon:'⚡',label:'NVMe SSD'},{id:'usb',icon:'🔌',label:'USB Flash'},{id:'bios',icon:'⚡',label:'BIOS Chip'}] },
+  questions:[
+    makeQ("Difference between PRIMARY and SECONDARY memory:",
+      ["Primary bigger","Primary directly accessed by CPU; secondary is permanent storage","Secondary faster","None"], 1,
+      "CPU talks directly.",
+      "<b>Primary memory</b> (ROM and RAM) is directly accessible by the CPU and stores data the CPU needs immediately. <b>Secondary memory</b> (HDD, SSD, USB) is permanent external storage."),
+    makeQ("Which is PRIMARY memory?",
+      ["HDD","SSD","RAM","USB"], 2,
+      "Directly accessible by CPU.",
+      "<b>Primary memory</b> includes ROM and RAM. It stores data the CPU needs immediately. RAM is used for active data; ROM stores permanent firmware like BIOS."),
+    makeQ("RAM is volatile because:",
+      ["Fast","Loses data when power off","Permanent","Stored in ROM"], 1,
+      "Shutdown = data gone.",
+      "RAM is <b>volatile</b> because it loses its data when power is turned off. This is why you lose unsaved work if the computer shuts down unexpectedly."),
+    makeQ("ROM is non-volatile because:",
+      ["Keeps data when off","Removable","Faster","Laptop only"], 0,
+      "Data stays.",
+      "ROM is <b>non-volatile</b> — it keeps its data even when power is off. It stores the BIOS firmware that the computer needs to boot."),
+    makeQ("DDR4 and DDR5 are types of:",
+      ["Storage","RAM","CPU","Power"], 1,
+      "Double Data Rate.",
+      "<b>DDR4 and DDR5</b> are types of <b>RAM (Random Access Memory)</b> modules. DDR stands for Double Data Rate. The motherboard supports specific RAM types."),
+    makeQ("More RAM helps when:",
+      ["Running one app","Running many apps at once","PC off","Browsing one site"], 1,
+      "More room for active programs.",
+      "Adding more RAM improves performance, especially when <b>running multiple applications at the same time</b>. RAM stores the data and programs the CPU is currently using."),
+    makeQ("Correct RAM install sequence:",
+      ["Force in any direction","Open clips, align notch, push evenly until snap","Place on top","Push one side"], 1,
+      "Notch + clips + even pressure.",
+      "To install RAM: <b>1)</b> Open clips on the DIMM slot. <b>2)</b> Align the notch with the slot. <b>3)</b> Push down evenly on both sides until clips snap. Never force — if clips don't lock, the RAM may be in the wrong direction."),
+    makeQ("RAM notch ensures:",
+      ["Decoration","Correct orientation only","Cooling","Direct CPU link"], 1,
+      "Physical key.",
+      "The <b>notch</b> on a RAM module ensures the RAM is inserted in only one correct direction. It is a physical key preventing wrong installation."),
+    makeQ("Before installing RAM:",
+      ["Turn on","Open DIMM clips","Remove CPU","Format HDD"], 1,
+      "Clips hold it.",
+      "Before installing RAM: <b>open the clips</b> on the DIMM slot to allow the RAM module to slide in. The clips lock it in place after insertion."),
+    makeQ("RAM clips don't lock. Likely reason:",
+      ["Board broken","Wrong direction or not seated","CPU missing","PSU off"], 1,
+      "Misaligned.",
+      "If the RAM clips don't lock, the RAM is most likely in the <b>wrong direction</b> or <b>not fully seated</b>. Check the notch alignment and push down evenly."),
+    makeQ("HDD stores data using:",
+      ["Flash","Magnetic platters","Laser","Cloud"], 1,
+      "Spinning disks + arm.",
+      "An <b>HDD (Hard Disk Drive)</b> uses <b>magnetic storage</b> to store and retrieve data. Inside, spinning disks called <b>platters</b> hold the data, and a <b>read/write arm</b> accesses it."),
+    makeQ("Spinning disks are called:",
+      ["Plates","Platters","Spindles","Fans"], 1,
+      "Circular magnetic.",
+      "The spinning disks inside an HDD are called <b>platters</b>. They are coated with magnetic material that stores the data."),
+    makeQ("Part of HDD that reads/writes:",
+      ["Fan","Read/Write arm","Laser","Flash cell"], 1,
+      "Physical arm.",
+      "The <b>Read/Write arm</b> moves over the platters to read or write data. It is a physical mechanical part that moves back and forth."),
+    makeQ("HDD speed is measured in:",
+      ["MHz","RPM","GB/s","Volts"], 1,
+      "Rotational.",
+      "HDD speed is measured in <b>RPM (Revolutions Per Minute)</b>. Most consumer HDDs have speeds between <b>5400 RPM and 7200 RPM</b>."),
+    makeQ("Common HDD speeds:",
+      ["1000–2000 RPM","5400–7200 RPM","10000–20000 RPM","200–500 RPM"], 1,
+      "Consumer HDDs.",
+      "Most consumer HDDs run at <b>5400 RPM</b> (slower, cooler) or <b>7200 RPM</b> (faster, hotter). Higher RPM = faster data transfer but also more heat."),
+    makeQ("Higher RPM means:",
+      ["Slower transfer","Faster transfer, more heat","Less storage","No effect"], 1,
+      "Faster spin = more heat.",
+      "A higher RPM means <b>faster data transfer</b> but also <b>more heat</b> produced. There is a trade-off between speed and thermal output."),
+    makeQ("SSD stores data using:",
+      ["Platters","Flash chips, no moving parts","Optical","Paper"], 1,
+      "No moving parts.",
+      "An <b>SSD (Solid-State Drive)</b> uses <b>flash memory chips</b> with <b>NO moving parts</b>. It is smaller, faster, and more reliable than an HDD but more expensive."),
+    makeQ("SSD vs HDD:",
+      ["SSD slower and cheaper","SSD faster, more reliable, pricier","SSD has platters","SSD has RPM"], 1,
+      "Newer = faster.",
+      "Compared to HDDs, <b>SSDs are faster, more reliable, and smaller</b>, but <b>more expensive</b>. SSDs have no moving parts, so they are more durable and produce less heat."),
+    makeQ("SSD produces less heat because:",
+      ["More fans","No moving parts","Liquid","Bigger"], 1,
+      "Motion = heat.",
+      "An SSD produces less heat because it has <b>no moving mechanical parts</b>. Mechanical motion (like spinning platters and moving arms in HDDs) generates heat."),
+    makeQ("Faster boot times need:",
+      ["HDD","SSD","DVD","Floppy"], 1,
+      "No moving parts.",
+      "For faster boot times and faster program loading, choose an <b>SSD</b>. Because SSDs have no moving parts, random access is much faster than HDDs."),
+    makeQ("Budget media server with lots of files:",
+      ["SSD","HDD (cheap per GB)","RAM","ROM"], 1,
+      "Capacity matters.",
+      "For a budget media server with lots of files, an <b>HDD</b> is best because it offers much more storage capacity per dollar (cheaper per GB). SSDs are faster but more expensive per GB."),
+    makeQ("M.2 SSDs are:",
+      ["Large external","Small NVMe/SATA, very fast","Older than IDE","Server-only"], 1,
+      "Direct-to-board.",
+      "<b>M.2 SSDs</b> are a small form factor NVMe or SATA SSD that connects directly to the motherboard. They are extremely fast and take up very little space."),
+    makeQ("NOT secondary storage:",
+      ["HDD","SSD","NVMe","CPU cache"], 3,
+      "Inside CPU = primary.",
+      "<b>CPU cache</b> is primary memory (inside the CPU), not secondary storage. HDD, SSD, and NVMe are all secondary storage devices."),
+    makeQ("Old HDD after upgrade:",
+      ["Throw away","Reuse as secondary or remove","Becomes RAM","Becomes cache"], 1,
+      "Keep as extra storage.",
+      "After upgrading from HDD to SSD, the old HDD can be <b>reused as secondary storage</b> for backups and files, or removed if not needed.")
+  ]
+},
+/* ============ 5. COOLING STATION ============ */
+{ id:4, name:"Cooling Station", icon:"❄️", sub:"Thermal Management", x:60, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Order the HSF installation steps",
+    zones:[{id:'seq',label:'📋 Correct Order',accepts:['clean','paste','align','press','connect']}],
+    items:[{id:'clean',icon:'🧴',label:'1️⃣ Clean CPU surface'},{id:'paste',icon:'🧴',label:'2️⃣ Apply paste'},{id:'align',icon:'🎯',label:'3️⃣ Align pins'},{id:'press',icon:'👆',label:'4️⃣ Press opposite pins'},{id:'connect',icon:'🔌',label:'5️⃣ Connect fan'}] },
+  questions:[
+    makeQ("Why do CPUs produce heat?",
+      ["Small heater","Billions of transistors switching","Spinning fans","Absorb sunlight"], 1,
+      "Tiny switches at speed.",
+      "Modern processors contain <b>billions of transistors</b> that generate heat while processing data. The rapid switching of these tiny electronic components produces significant thermal energy."),
+    makeQ("CPU too hot results in:",
+      ["Faster","Slows down to protect itself or damaged","More cores","Socket change"], 1,
+      "Throttling.",
+      "If the CPU gets too hot, it may <b>slow down to protect itself</b> (called throttling) or become permanently damaged. Cooling systems prevent this."),
+    makeQ("A heat sink is:",
+      ["A fan","Metal with fins absorbing heat","Software","RAM"], 1,
+      "Absorbs heat.",
+      "A <b>heat sink</b> is made of materials like aluminum or copper, with fins to increase surface area. It <b>absorbs heat from the CPU</b> and dissipates it into the air."),
+    makeQ("Why fins?",
+      ["Decoration","Increase surface area for heat dissipation","Store data","Add weight"], 1,
+      "More area = more heat released.",
+      "Heat sink fins <b>increase surface area</b>, which improves heat dissipation. More surface area in contact with air means more heat can be released."),
+    makeQ("Fan role in HSF:",
+      ["Absorbs heat","Blows air over heat sink","Power","Store data"], 1,
+      "Moves air.",
+      "In an HSF (Heat Sink and Fan), the <b>fan blows air over the heat sink</b> to carry away the heat. The heat sink absorbs heat; the fan moves it away."),
+    makeQ("Thermal paste is:",
+      ["Glue","Fills tiny gaps for heat transfer","Lubricant","Cleaner"], 1,
+      "Microscopic gaps.",
+      "<b>Thermal paste</b> is a special material applied between the CPU and heat sink. It <b>fills tiny microscopic gaps</b> to improve heat transfer between the two surfaces."),
+    makeQ("How much paste?",
+      ["A tube","Small pea-sized amount","None","Two lines"], 1,
+      "Too much = bad.",
+      "Apply a <b>small pea-sized amount</b> of thermal paste. Too much can be as bad as too little — it can spill over and reduce effectiveness."),
+    makeQ("After HSF install, connect:",
+      ["RAM","Fan to CPU_FAN header","GPU","SSD"], 1,
+      "Fan needs power.",
+      "After installing the HSF, connect the <b>fan's power cable to the CPU_FAN header</b> on the motherboard. The fan needs power to spin."),
+    makeQ("Which fan header must be connected?",
+      ["SYS_FAN","CPU_FAN","CHA_FAN","CPU_OPT"], 1,
+      "Prevents CPU damage.",
+      "The <b>CPU_FAN header</b> is required for booting in most PCs. The motherboard checks it to prevent CPU damage from overheating."),
+    makeQ("Forgot CPU fan:",
+      ["Nothing","May not boot or CPU overheats","RAM damaged","GPU fails"], 1,
+      "BIOS checks at POST.",
+      "If you forget to connect the CPU fan, the PC may not boot (BIOS checks the fan at POST) or the CPU may overheat and be damaged."),
+    makeQ("Water cooling uses liquid to:",
+      ["Freeze","Remove heat efficiently","Speed up","Store"], 1,
+      "Water conducts better.",
+      "<b>Water cooling</b> uses liquid to remove heat from the CPU <b>more efficiently than most air coolers</b>. Water conducts heat better than air, keeping the processor cooler during demanding tasks."),
+    makeQ("Pre-built sealed water cooling:",
+      ["Custom Loop","All-in-One (AIO)","Passive air","Heat pipe"], 1,
+      "One sealed unit.",
+      "<b>All-in-One (AIO)</b> water cooling is pre-built, sealed, easy to install, and requires little maintenance. It is one complete unit."),
+    makeQ("Better performance but more maintenance:",
+      ["AIO","Custom Loop","Stock air","Fanless"], 1,
+      "Separate components.",
+      "A <b>Custom Loop</b> water cooling system is built from separate components. It offers better cooling and customization but requires more maintenance."),
+    makeQ("NOT an advantage of water cooling:",
+      ["Excellent cooling","Quieter","Lower temps","Cheaper than air"], 3,
+      "Usually more expensive.",
+      "Water cooling advantages: excellent cooling, quieter operation, lower CPU temps, better for overclocking. <b>Cheaper</b> is NOT an advantage — water cooling is usually more expensive than air cooling."),
+    makeQ("Custom water cooling disadvantage:",
+      ["Worse cooling","Expensive, harder, leak risk","No gaming","No maintenance"], 1,
+      "Complex + risk.",
+      "Custom water cooling disadvantages: more expensive than air coolers, more difficult to install, requires regular maintenance, and a small risk of liquid leaks."),
+    makeQ("Water cooling best for:",
+      ["Basic office","High-end gaming and quiet builds","Only laptops","Only servers"], 1,
+      "Maximum cooling, low noise.",
+      "Water cooling is best for <b>high-performance gaming PCs, professional workstations, and systems that need efficient and quiet cooling</b>."),
+    makeQ("Common heat sink materials:",
+      ["Plastic/rubber","Aluminum/copper","Glass/wood","Paper/cloth"], 1,
+      "Conduct heat well.",
+      "Heat sinks are made of <b>aluminum or copper</b> because these metals conduct heat very well. They are the most common materials."),
+    makeQ("Grooves on Intel push pins should:",
+      ["Away","Toward fan center","Removed","Up"], 1,
+      "Arrow indicators.",
+      "The grooves on the push pins of an Intel stock cooler should <b>point toward the center of the fan</b>. This ensures they lock correctly into the motherboard."),
+    makeQ("Correct press sequence:",
+      ["All four","Two opposite at a time until click","One pin","Bottom two first"], 1,
+      "Even pressure.",
+      "For HSF installation, press <b>two opposite push pins at the same time</b> until you hear a click. Then repeat with the other two. This ensures even pressure."),
+    makeQ("Pre-applied paste:",
+      ["Add more","Do NOT add more","Remove and replace","Doesn't matter"], 1,
+      "Pre-applied is enough.",
+      "If the cooler already has <b>pre-applied thermal paste</b>, you do NOT need to add more. Adding extra would be wasteful and could reduce effectiveness.")
+  ]
+},
+/* ============ 6. PERIPHERAL PLAZA ============ */
+{ id:5, name:"Peripheral Plaza", icon:"⌨️", sub:"Input · Output · Hybrid", x:74, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Classify: INPUT, OUTPUT, or HYBRID",
+    zones:[{id:'in',label:'⬅️ INPUT',accepts:['kbd','mouse','mic','webcam','scanner','touchpad','lightpen','joystick','barcode']},{id:'out',label:'➡️ OUTPUT',accepts:['monitor','printer','speakers','projector']},{id:'both',label:'🔄 HYBRID',accepts:['touch','headset']}],
+    items:[{id:'kbd',icon:'⌨️',label:'Keyboard'},{id:'mouse',icon:'🖱️',label:'Mouse'},{id:'mic',icon:'🎤',label:'Microphone'},{id:'webcam',icon:'📷',label:'Webcam'},{id:'scanner',icon:'📠',label:'Scanner'},{id:'touchpad',icon:'👆',label:'Touchpad'},{id:'lightpen',icon:'🖊️',label:'Light Pen'},{id:'joystick',icon:'🕹️',label:'Joystick'},{id:'barcode',icon:'📊',label:'Barcode Reader'},{id:'monitor',icon:'🖥️',label:'Monitor'},{id:'printer',icon:'🖨️',label:'Printer'},{id:'speakers',icon:'🔊',label:'Speakers'},{id:'projector',icon:'📽️',label:'Projector'},{id:'touch',icon:'📱',label:'Touchscreen'},{id:'headset',icon:'🎧',label:'Headset'}] },
+  questions:[
+    makeQ("INPUT device function:",
+      ["Display","Send data INTO computer","Store","Cool"], 1,
+      "Data goes IN.",
+      "An <b>input device</b> is any hardware that enables a human user or another system to <b>communicate with a computer</b> by sending data INTO it. Examples: keyboard, mouse, scanner, camera."),
+    makeQ("OUTPUT device function:",
+      ["Send data IN","Display/produce results","Store","Power"], 1,
+      "Results come OUT.",
+      "<b>Output devices</b> display or produce the results of a computer's processing. Examples: monitor, printer, speakers. They translate processed data into a human-perceptible form."),
+    makeQ("Which is INPUT?",
+      ["Monitor","Printer","Keyboard","Speakers"], 2,
+      "Enter letters/commands.",
+      "A <b>keyboard</b> is an input device used to enter letters, numbers, symbols, and commands into a computer. Monitor, printer, and speakers are output devices."),
+    makeQ("Keyboard used to:",
+      ["Display","Enter letters, numbers, commands","Print","Cool"], 1,
+      "Key presses.",
+      "A <b>keyboard</b> allows users to type text, search for information, complete schoolwork, and interact with software by pressing keys. It is an essential input device."),
+    makeQ("Older keyboards may use:",
+      ["HDMI","PS/2","Ethernet","VGA"], 1,
+      "Round 6-pin purple.",
+      "Older keyboards may use a <b>PS/2 connector</b> — a round, 6-pin connector (usually purple for keyboards, green for mice). Modern keyboards use USB."),
+    makeQ("Mouse is used to:",
+      ["Type","Interact with GUI (click, drag, scroll)","Print","Cool"], 1,
+      "Drives cursor.",
+      "A computer <b>mouse</b> is used to control a computer by interacting with its <b>Graphical User Interface (GUI)</b>. It has buttons and a scroll wheel for clicking, dragging, and scrolling."),
+    makeQ("Microphone:",
+      ["Outputs sound","Captures sound to electrical signals","Displays video","Prints"], 1,
+      "Captures sound.",
+      "A <b>microphone</b> is an input device that <b>captures sound</b> and converts it into electrical signals that a computer can process."),
+    makeQ("Webcam:",
+      ["Prints","Captures and shares video","Stores files","Plays audio"], 1,
+      "Camera for web.",
+      "A <b>webcam</b> is a small camera that connects to a computer to capture and share video. It is used for video calls, online classes, live streaming, and recording videos."),
+    makeQ("Scanner:",
+      ["Prints","Converts paper to digital files","Displays video","Plays audio"], 1,
+      "Digitizes physical media.",
+      "A <b>scanner</b> converts paper documents, photos, and images into <b>digital files</b> that can be viewed, edited, stored, or shared on a computer."),
+    makeQ("Touchpad:",
+      ["Mouse","Flat touch surface controlling cursor","Output","Storage"], 1,
+      "Found on laptops.",
+      "A <b>touchpad</b> is a flat, touch-sensitive surface, usually built into laptops, that allows users to move the cursor and perform actions using their fingers."),
+    makeQ("Light pen:",
+      ["Write on paper","Point/select/draw on screen","Scan barcodes","Game"], 1,
+      "Pen-shaped.",
+      "A <b>light pen</b> is a pen-shaped input device used to <b>point, select, and draw directly on a computer screen</b>."),
+    makeQ("Joystick:",
+      ["Output for sound","Input with movable stick for gaming","Monitor","Storage"], 1,
+      "Gaming control.",
+      "A <b>joystick</b> is an input device with a movable stick and buttons used to control movement and actions on a computer or gaming system."),
+    makeQ("Barcode reader common in:",
+      ["Gaming","Supermarkets/inventory/libraries","Videos","Music"], 1,
+      "Checkout scanning.",
+      "A <b>barcode reader</b> is an input device that scans barcodes and transmits data to a computer. It is commonly used in supermarkets, inventory management, libraries, and logistics."),
+    makeQ("Monitor:",
+      ["Input","Most common output showing visuals","Storage","CPU"], 1,
+      "Shows processed data.",
+      "A <b>monitor</b> is the most common output device that displays processed data in visual form — text, images, and videos. It comes in LED, LCD, and OLED types."),
+    makeQ("Common monitor port:",
+      ["USB-A only","HDMI/VGA/DisplayPort","Ethernet","Audio"], 1,
+      "Video output ports.",
+      "Monitors connect using ports such as <b>HDMI, VGA, or DisplayPort</b>. These are all video output ports on the computer's rear I/O panel."),
+    makeQ("Printer:",
+      ["Displays on screen","Produces physical copy on paper","Plays sound","Captures video"], 1,
+      "Physical output.",
+      "A <b>printer</b> is an output device that produces a <b>physical copy</b> of digital documents and images on paper. It converts text and graphics into printed form."),
+    makeQ("Common printer types:",
+      ["Inkjet and Laser","LCD and LED","DDR4 and DDR5","SATA and NVMe"], 0,
+      "Ink vs toner/laser.",
+      "Common printer types are <b>inkjet</b> (uses liquid ink) and <b>laser</b> (uses toner and a laser). Both can print in black and white or color."),
+    makeQ("Speakers:",
+      ["Input for recording","Output producing sound","Storage","Network"], 1,
+      "Convert audio to audible.",
+      "<b>Speakers</b> are output devices that produce sound from a computer. They convert digital audio signals into audible sound for music, videos, calls, and gaming."),
+    makeQ("Projector:",
+      ["Small monitor","Output for large screen/wall","Input","Storage"], 1,
+      "Large display.",
+      "A <b>projector</b> is an optical output device that displays images, videos, or presentations on a large screen or wall — used in classrooms, meetings, and cinemas."),
+    makeQ("Projector connection:",
+      ["USB-A only","HDMI or VGA","Ethernet only","Audio only"], 1,
+      "Video ports.",
+      "Projectors connect to devices using <b>HDMI or VGA</b> — the same video ports used by monitors. They come in LCD, DLP, and LED types."),
+    makeQ("Touchscreen is HYBRID because:",
+      ["Two cables","Displays AND accepts touch","Only outputs","Only inputs"], 1,
+      "In + Out.",
+      "A <b>touchscreen</b> is both an input and output device. It displays information like a monitor AND allows users to control the device by touching the screen. Used in smartphones, tablets, ATMs, kiosks."),
+    makeQ("Headset is HYBRID because:",
+      ["Two colors","Headphones output, mic inputs","Wireless only","Only outputs"], 1,
+      "Two functions.",
+      "A <b>headset</b> is a hybrid device: the headphones output audio, while the microphone inputs the user's voice. Used for calls, gaming, and online learning."),
+    makeQ("NOT an input device:",
+      ["Mouse","Microphone","Monitor","Barcode reader"], 2,
+      "Shows results.",
+      "A <b>monitor</b> is an OUTPUT device — it displays results. Mouse, microphone, and barcode reader are all input devices."),
+    makeQ("NOT an output device:",
+      ["Printer","Speakers","Projector","Scanner"], 3,
+      "Digitizes physical media.",
+      "A <b>scanner</b> is an INPUT device — it takes physical media and converts it to digital files. Printer, speakers, and projector are output devices."),
+    makeQ("Wireless keyboard connects via:",
+      ["HDMI","2.4GHz RF USB dongle","Ethernet","VGA"], 1,
+      "Small USB receiver.",
+      "Wireless keyboards (2.4GHz RF) connect using radio frequency via a small <b>USB dongle</b> that plugs into the PC. Bluetooth is another wireless option."),
+    makeQ("Webcam types include:",
+      ["Only one","Built-in, external, wireless, HD","Output devices","Desktop only"], 1,
+      "Variety exists.",
+      "Types of webcams: <b>Built-in</b> (integrated into laptops), <b>External</b> (USB), <b>Wireless</b> (no cables), and <b>HD</b> (high-quality video).")
+  ]
+},
+/* ============ 7. SAFETY & EMERGENCY ============ */
+{ id:6, name:"Safety & Emergency", icon:"🦺", sub:"Safety & Troubleshooting", x:88, unlocked:false, done:false, idx:0, practiceDone:false,
+  practice:{ title:"🧩 Match safety rule with correct PPE / tool",
+    zones:[{id:'strap',label:'⚡ ESD Protection',accepts:['wrist']},{id:'gloves',label:'🧤 Hand Protection',accepts:['esdglove']},{id:'glasses',label:'👓 Eye Protection',accepts:['safetyglasses']},{id:'shoes',label:'👟 Foot Protection',accepts:['shoes']},{id:'tool',label:'🛠️ Correct Tool',accepts:['screwdriver']}],
+    items:[{id:'wrist',icon:'⚡',label:'Anti-static wrist strap'},{id:'esdglove',icon:'🧤',label:'ESD Gloves'},{id:'safetyglasses',icon:'👓',label:'Safety glasses'},{id:'shoes',icon:'👟',label:'Safety shoes'},{id:'screwdriver',icon:'🛠️',label:'Screwdriver set'}] },
+  questions:[
+    makeQ("ESD stands for:",
+      ["Electro-Static Discharge — sudden electricity flow damaging components","Extra Storage Device","Energy Saving Device","Emergency Shut Down"], 0,
+      "Doorknob shock = danger for electronics.",
+      "<b>ESD (Electro-Static Discharge)</b> is a sudden flow of electricity between two objects. It can damage sensitive electronic components. That little shock you feel when touching a metal doorknob is an example — very dangerous for electronics."),
+    makeQ("ESD protection tool:",
+      ["Safety glasses","Anti-static wrist strap","Screwdriver","Thermal paste"], 1,
+      "Straps to wrist, grounds you.",
+      "An <b>anti-static wrist strap</b> is worn on your wrist and grounds you, preventing ESD. It is essential when handling sensitive electronic components."),
+    makeQ("FIRST step before opening case:",
+      ["Turn off and disconnect power","Wash hands","Put gloves","Turn up AC"], 0,
+      "No electricity while working.",
+      "The FIRST thing before opening a computer case is to <b>turn off the computer and disconnect the power cable</b>. Safety first — never work on a powered system."),
+    makeQ("Which is PPE?",
+      ["Screwdriver","ESD gloves","Thermal paste","RAM"], 1,
+      "Worn on body.",
+      "<b>PPE (Personal Protective Equipment)</b> includes items worn on the body for protection — like ESD gloves, safety glasses, safety shoes, hard hats, and safety harnesses."),
+    makeQ("Safety glasses protect from:",
+      ["Shock","Dust/debris","Falls","Noise"], 1,
+      "Eye protection.",
+      "<b>Safety glasses</b> protect eyes from dust and debris while working on hardware. They are essential when cleaning dust or handling components."),
+    makeQ("Safety shoes protect from:",
+      ["Eye damage","Foot injuries and slipping","Shock","Noise"], 1,
+      "Feet.",
+      "<b>Safety shoes</b> prevent foot injuries and slipping. They are especially important in environments where heavy equipment could fall."),
+    makeQ("Hard hats protect from:",
+      ["Dust","Falling objects","Shock","Heat"], 1,
+      "Overhead hazards.",
+      "<b>Hard hats</b> protect from falling objects. They are essential when working at height or in areas with overhead hazards."),
+    makeQ("Safety harness prevents:",
+      ["Falls at height","Eye damage","ESD","Noise"], 0,
+      "Elevation work.",
+      "A <b>safety harness</b> prevents falls during installation at height. It is used when working on ladders, roofs, or elevated platforms."),
+    makeQ("General workplace rule:",
+      ["Leave tools on floor","Keep areas clean and organized","Block exits","Ignore training"], 1,
+      "Clean workspace.",
+      "Following all workplace safety instructions includes: keeping work areas <b>clean and organized</b>, ensuring emergency exits remain clear, reporting hazards, and participating in safety training."),
+    makeQ("Hazard seen. Do:",
+      ["Ignore","Report immediately","Fix without training","Photo only"], 1,
+      "Report hazards.",
+      "If you see a hazard, <b>report it immediately</b>. Never try to fix it yourself without proper training. Safety is everyone's responsibility."),
+    makeQ("Emergency exits should:",
+      ["Be locked","Remain clear","Be blocked","Be optional"], 1,
+      "People must exit.",
+      "Emergency exits must <b>remain clear and unobstructed</b>. In an emergency, people need to get out quickly. Never block exits with equipment or boxes."),
+    makeQ("Wet hands + electronics:",
+      ["Fine","Water conducts = shock risk","Causes ESD only","Damages components"], 1,
+      "Dangerous path for current.",
+      "Touching electrical components with wet hands is dangerous because <b>water conducts electricity</b> and can cause electric shock. Always dry your hands before working with electronics."),
+    makeQ("Emergency shutdown procedures:",
+      ["Ignored","Must be followed","Optional","Manager only"], 1,
+      "Follow exactly.",
+      "Emergency shutdown procedures <b>must be followed when required</b>. They exist to protect people and equipment. Everyone must follow them exactly."),
+    makeQ("PC shuts down, case hot:",
+      ["Overheating","Dead CMOS","Broken USB","Missing drivers"], 0,
+      "Heat protection.",
+      "A PC shutting down with a hot case is most likely <b>overheating</b>. Modern systems shut down to prevent CPU damage from excessive heat."),
+    makeQ("Overheating symptoms:",
+      ["Loud fan, sudden shutdowns, hot case","Blue screen only","Slow internet","No sound"], 0,
+      "Fan works hard, hot case.",
+      "Common symptoms of PC overheating: <b>loud fan noise, sudden shutdowns, and a hot case</b>. The fan works hard trying to cool the system."),
+    makeQ("FIRST overheating fix:",
+      ["Replace CPU","Clean dust from fans/heatsinks","Reinstall Windows","Add RAM"], 1,
+      "Dust blocks airflow.",
+      "The FIRST step to fix overheating is to <b>clean dust from fans and heat sinks</b>. Dust blocks airflow and traps heat, causing overheating."),
+    makeQ("After cleaning dust:",
+      ["New thermal paste + airflow check","Second CPU","Remove GPU","Turn off fans"], 0,
+      "Paste ages.",
+      "After cleaning dust, apply <b>new thermal paste</b> and check airflow. Old thermal paste loses effectiveness over time, reducing heat transfer."),
+    makeQ("HDD→SSD upgrade FIRST step:",
+      ["Buy any SSD","Determine current interface (SATA/NVMe)","Delete all files","Open while running"], 1,
+      "Know your interface.",
+      "The FIRST step to upgrade from HDD to SSD is to <b>determine if the device uses SATA or NVMe</b>. You must know the interface before buying."),
+    makeQ("Before opening case:",
+      ["Turn off, disconnect, use anti-static","Open while running","Unplug RAM","Remove CPU"], 0,
+      "Safety always.",
+      "Before opening the case: <b>turn off, disconnect power, and use anti-static protection</b>. Safety procedures apply to ALL work inside the PC."),
+    makeQ("RAM upgrade FIRST check:",
+      ["Color","RAM type (DDR), form factor, compatibility","CPU brand","Monitor size"], 1,
+      "Compatibility first.",
+      "Before upgrading RAM, you must check the <b>current RAM type (DDR3/DDR4/DDR5), form factor (DIMM/SODIMM), and motherboard compatibility</b>. Compatibility is essential."),
+    makeQ("SODIMM is used in:",
+      ["Desktops","Laptops","Servers only","Tablets only"], 1,
+      "Small Outline.",
+      "<b>SODIMM (Small Outline DIMM)</b> RAM is typically used in <b>laptops</b> because it is more compact than regular DIMM RAM used in desktops."),
+    makeQ("RAM upgrade fails to boot. FIRST:",
+      ["Buy new RAM","Reseat, check clips, test one stick","Replace motherboard","Format drive"], 1,
+      "Not fully seated.",
+      "If a RAM upgrade causes the PC not to boot, FIRST <b>reseat the RAM</b> — check clips and orientation, and test one stick at a time. The most common cause is RAM not fully seated."),
+    makeQ("Good workplace habit:",
+      ["Store tools safely","Cables across walkways","Ignore training","Skip PPE"], 0,
+      "Everything in place.",
+      "Good workplace safety habits include: <b>storing tools safely after use</b>, keeping the area clean, wearing appropriate PPE, and following all safety procedures."),
+    makeQ("Before sensitive electronics:",
+      ["Rub feet on carpet","Ground with anti-static strap","Rubber gloves only","Drink water"], 1,
+      "Grounding prevents ESD.",
+      "Before handling sensitive electronic components, always <b>ground yourself with an anti-static wrist strap</b>. Grounding prevents ESD, which can silently damage components."),
+    makeQ("NOT a safety hazard:",
+      ["Loose cables","Wet floors","Overloaded outlets","Well-organized tools"], 3,
+      "Actually safe.",
+      "<b>Well-organized tool kits</b> are NOT a hazard — they are good practice. Loose cables, wet floors, and overloaded outlets are real hazards."),
+    makeQ("If unsure about safety:",
+      ["Try anyway","Ask supervisor or consult docs","Ignore warnings","Work faster"], 1,
+      "Never guess.",
+      "If you do not know how to safely do a hardware task, always <b>ask a supervisor or consult documentation</b>. Never guess when it comes to safety.")
+  ]
+}
+];
+
+/* ============================================================
+   SAVE / LOAD
+   ============================================================ */
+function saveGame(silent){
+  const save = {
+    score: state.score, correct: state.correct, total: state.total,
+    streak: state.streak, bestStreak: state.bestStreak,
+    coins: state.coins, xp: state.xp, level: state.level, title: state.title,
+    achievements: state.achievements,
+    districts: state.districts.map(d => ({ id:d.id, done:d.done, idx:d.idx, practiceDone:d.practiceDone, unlocked:d.unlocked }))
+  };
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); if(!silent) toast('💾 Progress Saved!', true); }
+  catch(e){ if(!silent) toast('⚠️ Could not save', false); }
+}
+
+function loadGame(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const save = JSON.parse(raw);
+    Object.assign(state, {
+      score: save.score||0, correct: save.correct||0, total: save.total||0,
+      streak: save.streak||0, bestStreak: save.bestStreak||0,
+      coins: save.coins||0, xp: save.xp||0, level: save.level||1,
+      title: save.title||'Trainee', achievements: save.achievements||{}
+    });
+    save.districts.forEach(d => {
+      const dist = state.districts.find(x => x.id === d.id);
+      if (dist) { dist.done = d.done; dist.idx = d.idx; dist.practiceDone = d.practiceDone; dist.unlocked = d.unlocked; }
+    });
+    state.districts[0].unlocked = true;
+  } catch(e){ console.warn(e); }
+}
+
+function resetGame(){
+  if (!confirm('Reset all progress?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+/* ============================================================
+   XP / LEVEL
+   ============================================================ */
+function xpForLevel(l){ return 100 + (l-1)*80; }
+const TITLES = ['Trainee','Technician','Junior Engineer','Engineer','Senior Engineer','Specialist','Senior Specialist','Lead Engineer','Principal Engineer','Master Engineer','Grand Master'];
+function addXP(amount){
+  state.xp += amount;
+  let leveled = false;
+  while (state.xp >= xpForLevel(state.level)) {
+    state.xp -= xpForLevel(state.level);
+    state.level++;
+    leveled = true;
+  }
+  state.title = TITLES[Math.min(state.level-1, TITLES.length-1)];
+  if (leveled) showLevelUp();
+  updateXPUI();
+}
+function showLevelUp(){
+  const lv = document.getElementById('levelup');
+  lv.textContent = `⚡ LEVEL ${state.level} — ${state.title}! ⚡`;
+  lv.classList.remove('show'); void lv.offsetWidth; lv.classList.add('show');
+  playSound('levelup');
+}
+function updateXPUI(){
+  document.getElementById('lvl').textContent = state.level;
+  document.getElementById('title').textContent = state.title;
+  document.getElementById('xp').textContent = state.xp;
+  document.getElementById('xp-fill').style.width = (state.xp/xpForLevel(state.level)*100) + '%';
+}
+
+/* ============================================================
+   SOUND
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio(){ if (!audioCtx) { try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } }
+function playSound(type){
+  ensureAudio(); if (!audioCtx) return;
+  const notes = { correct:[{f:523,d:0.08},{f:659,d:0.08},{f:784,d:0.12}], wrong:[{f:220,d:0.15},{f:180,d:0.15}], levelup:[{f:523,d:0.1},{f:659,d:0.1},{f:784,d:0.1},{f:1047,d:0.2}], click:[{f:800,d:0.03}] };
+  const seq = notes[type] || notes.click;
+  let t = audioCtx.currentTime;
+  seq.forEach(n => {
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.value = n.f;
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + n.d);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + n.d); t += n.d * 0.9;
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function toast(msg, gold){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = gold ? 'gold show' : 'show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 2200);
+}
+
+/* ============================================================
+   BUILD CITY
+   ============================================================ */
+const cityView = document.getElementById('city-view');
+const playerEl = document.getElementById('player');
+const shadowEl = document.getElementById('shadow');
+const promptEl = document.getElementById('nearby-prompt');
+
+for (let i=0; i<90; i++){
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.left = Math.random()*100 + '%';
+  s.style.top = Math.random()*55 + '%';
+  s.style.animationDelay = (Math.random()*3) + 's';
+  cityView.appendChild(s);
+}
+
+const buildingEls = [];
+function rebuildCity(){
+  buildingEls.forEach(el => el.remove());
+  buildingEls.length = 0;
+  state.districts.forEach((b, i) => {
+    const el = document.createElement('div');
+    el.className = 'building';
+    if (b.done) el.classList.add('done');
+    if (!b.unlocked) el.classList.add('locked');
+    el.style.left = b.x + '%';
+    el.innerHTML = `
+      <div class="win" style="top:26px;left:18px;"></div>
+      <div class="win" style="top:26px;right:18px;animation-delay:0.5s;"></div>
+      <div class="win" style="top:62px;left:18px;animation-delay:1s;"></div>
+      <div class="win" style="top:62px;right:18px;animation-delay:1.5s;"></div>
+      <div class="icon">${b.icon}</div>
+      <h3>${b.name}</h3>
+      <div class="sub">${b.sub}</div>
+      <div class="badge">${b.done ? '✓ Done' : (b.unlocked ? (b.idx + ' / ' + b.questions.length) : '🔒 Locked')}</div>
+    `;
+    el.addEventListener('click', () => {
+      if (!b.unlocked) { toast('🔒 Complete previous district first!', false); return; }
+      openMission(i);
+    });
+    cityView.appendChild(el);
+    buildingEls.push(el);
+  });
+}
+
+/* ============================================================
+   PLAYER MOVEMENT
+   ============================================================ */
+const player = { x: 5, y: 55, speed: 0.9 };
+const keys = {};
+let currentNearby = -1;
+
+function updatePlayerPos(){
+  const w = window.innerWidth, h = window.innerHeight;
+  const px = (player.x / 100) * (w - 60);
+  const py = (player.y / 100) * (h - 220) + 60;
+  playerEl.style.left = px + 'px';
+  playerEl.style.top  = py + 'px';
+  shadowEl.style.left = (px + 5) + 'px';
+  shadowEl.style.top = (py + 82) + 'px';
+}
+
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (e.key === 'e' || e.key === 'E') {
+    if (currentNearby >= 0) openMission(currentNearby);
+  }
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) {
+    e.preventDefault();
+  }
+}, { passive: false });
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+let touchStart = null;
+document.addEventListener('touchstart', e => {
+  if (e.target.closest('#modal-overlay, #achv-overlay, #picker-overlay, .top-btn, .panel')) return;
+  touchStart = e.touches[0];
+}, { passive:true });
+document.addEventListener('touchmove', e => {
+  if (!touchStart || e.target.closest('#modal-overlay, #achv-overlay, #picker-overlay')) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStart.clientX, dy = t.clientY - touchStart.clientY;
+  if (Math.hypot(dx, dy) > 8) {
+    if (Math.abs(dx) > Math.abs(dy)) { keys.a=false; keys.d=false; keys[dx>0?'d':'a'] = true; }
+    else { keys.w=false; keys.s=false; keys[dy>0?'s':'w'] = true; }
+    touchStart = { clientX: t.clientX, clientY: t.clientY };
+  }
+}, { passive:true });
+document.addEventListener('touchend', () => { keys.a=keys.d=keys.w=keys.s=false; touchStart=null; });
+
+function gameLoop(){
+  let moved = false;
+  if (keys.a || keys.arrowleft)  { player.x -= player.speed; moved = true; }
+  if (keys.d || keys.arrowright) { player.x += player.speed; moved = true; }
+  if (keys.w || keys.arrowup)    { player.y -= player.speed; moved = true; }
+  if (keys.s || keys.arrowdown)  { player.y += player.speed; moved = true; }
+  player.x = Math.max(1, Math.min(95, player.x));
+  player.y = Math.max(8, Math.min(72, player.y));
+  if (moved) playerEl.classList.add('walking'); else playerEl.classList.remove('walking');
+  updatePlayerPos();
+  checkNearby();
+  requestAnimationFrame(gameLoop);
+}
+
+function checkNearby(){
+  const w = window.innerWidth;
+  const px = (player.x/100) * w;
+  let found = -1;
+  state.districts.forEach((b, i) => {
+    const bx = (b.x/100) * w + 85;
+    if (Math.abs(px - bx) < 100) found = i;
+  });
+  if (found !== currentNearby) {
+    currentNearby = found;
+    if (found >= 0) {
+      const b = state.districts[found];
+      if (b.unlocked) {
+        const bx = (b.x/100) * w + 85;
+        promptEl.style.left = bx + 'px';
+        promptEl.style.top = (window.innerHeight * 0.38 - 30) + 'px';
+        promptEl.style.display = 'block';
+      } else promptEl.style.display = 'none';
+    } else promptEl.style.display = 'none';
+  }
+}
+
+/* ============================================================
+   MODAL / MISSIONS
+   ============================================================ */
+const modalOverlay = document.getElementById('modal-overlay');
+const modalContent = document.getElementById('modal-content');
+let activeMission = null;
+let answered = false;
+
+function openMission(id){
+  const b = state.districts[id];
+  if (!b.unlocked) { toast('🔒 Locked!', false); return; }
+  activeMission = b;
+  answered = false;
+  modalOverlay.classList.add('active');
+  if (!b.practiceDone && b.practice) renderPractice();
+  else if (b.idx < b.questions.length) renderQ();
+  else closeModal();
+}
+
+function closeModal(){
+  modalOverlay.classList.remove('active');
+  activeMission = null;
+  promptEl.style.display = 'none';
+}
+
+/* ============ PUZZLE ============ */
+function renderPractice(){
+  const m = activeMission;
+  const p = m.practice;
+  modalContent.innerHTML = `
+    <div class="m-header">
+      <div class="m-icon">🧩</div>
+      <div><h2>${m.name} — Practice</h2><p>Drag items to the correct zones</p></div>
+    </div>
+    <div class="puzzle">
+      <div class="puzzle-title">${p.title}</div>
+      <div class="drop-zone" id="dz-seq"></div>
+      <div class="puzzle-title" style="margin-top:12px;">Available Items:</div>
+      <div class="drop-zone" id="dz-items" style="border-style:solid;border-color:#4facfe;background:rgba(79,172,254,0.05);min-height:100px;"></div>
+      <div class="fb" id="pfb"></div>
+      <button class="next-btn" id="pnext" onclick="finishPractice()">Continue to Challenges ➜</button>
+    </div>
+  `;
+  setupPuzzle(p);
+}
+
+function setupPuzzle(p){
+  const itemsPool = document.getElementById('dz-items');
+  p.items.forEach(it => {
+    const d = document.createElement('div');
+    d.className = 'draggable';
+    d.draggable = true;
+    d.dataset.item = it.id;
+    d.innerHTML = `<span class="di">${it.icon}</span>${it.label}`;
+    d.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', it.id); d.style.opacity='0.4'; });
+    d.addEventListener('dragend', () => d.style.opacity='1');
+    d.addEventListener('touchstart', touchDragStart, { passive:true });
+    itemsPool.appendChild(d);
+  });
+
+  const seqZone = document.getElementById('dz-seq');
+  if (p.zones.length > 1) {
+    seqZone.innerHTML = '';
+    const container = document.createElement('div');
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
+    container.style.gap = '12px';
+    container.style.width = '100%';
+    p.zones.forEach(z => {
+      const zone = document.createElement('div');
+      zone.className = 'drop-zone';
+      zone.dataset.zone = z.id;
+      zone.style.flexDirection = 'column';
+      zone.style.minHeight = '100px';
+      zone.innerHTML = `<div style="text-align:center;color:#4facfe;font-weight:bold;width:100%;margin-bottom:6px;">${z.label}</div>`;
+      container.appendChild(zone);
+    });
+    seqZone.appendChild(container);
+  } else {
+    seqZone.dataset.zone = p.zones[0].id;
+    seqZone.innerHTML = `<div style="text-align:center;color:#4facfe;font-weight:bold;width:100%;">${p.zones[0].label}</div>`;
+    seqZone.style.flexDirection = 'column';
+  }
+
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    if (zone.id === 'dz-items') return;
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('over');
+      const id = e.dataTransfer.getData('text/plain');
+      handleDrop(id, zone, p);
+    });
+  });
+}
+
+let touchDragEl = null;
+function touchDragStart(e){
+  touchDragEl = e.currentTarget;
+  touchDragEl.style.opacity = '0.6';
+  const move = ev => {
+    ev.preventDefault();
+    const t = ev.touches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const z = el ? el.closest('.drop-zone') : null;
+    if (z && z.id !== 'dz-items') {
+      document.querySelectorAll('.drop-zone').forEach(x => x.classList.remove('over'));
+      z.classList.add('over');
+    }
+  };
+  const end = ev => {
+    const t = ev.changedTouches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const zone = el ? el.closest('.drop-zone') : null;
+    if (zone && zone.id !== 'dz-items') handleDrop(touchDragEl.dataset.item, zone, activeMission.practice);
+    document.querySelectorAll('.drop-zone').forEach(x => x.classList.remove('over'));
+    if (touchDragEl) touchDragEl.style.opacity = '1';
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', end);
+  };
+  document.addEventListener('touchmove', move, { passive:false });
+  document.addEventListener('touchend', end);
+}
+
+function handleDrop(itemId, zone, practice){
+  const item = practice.items.find(i => i.id === itemId);
+  if (!item) return;
+  const zoneId = zone.dataset.zone;
+  const zoneDef = practice.zones.find(z => z.id === zoneId);
+
+  if (practice.zones.length === 1) {
+    const drag = document.querySelector(`.draggable[data-item="${itemId}"]`);
+    if (drag && drag.classList.contains('correct')) return;
+    const count = zone.querySelectorAll('.draggable.correct').length;
+    const order = practice.items.map(i => i.id);
+    if (itemId === order[count]) {
+      if (drag) { drag.classList.add('correct'); drag.draggable = false; zone.appendChild(drag); }
+      const msg = document.getElementById('pfb');
+      msg.className = 'fb correct show'; msg.innerHTML = `✅ Correct order!`;
+      playSound('correct');
+      if (zone.querySelectorAll('.draggable.correct').length === practice.items.length) finishPracticeAuto();
+    } else {
+      const drag = document.querySelector(`.draggable[data-item="${itemId}"]`);
+      if (drag) { drag.classList.add('wrong-shake'); setTimeout(()=>drag.classList.remove('wrong-shake'), 500); }
+      const msg = document.getElementById('pfb');
+      msg.className = 'fb clue show'; msg.innerHTML = `❌ Not the right order. Think about the steps.`;
+      playSound('wrong');
+    }
+    return;
+  }
+
+  if (zoneDef && zoneDef.accepts.includes(itemId)) {
+    const drag = document.querySelector(`.draggable[data-item="${itemId}"]`);
+    if (drag) { drag.classList.add('correct'); drag.draggable = false; zone.appendChild(drag); }
+    const msg = document.getElementById('pfb');
+    msg.className = 'fb correct show'; msg.innerHTML = `✅ Correct!`;
+    playSound('correct');
+    if (document.querySelectorAll('.draggable.correct').length === practice.items.length) finishPracticeAuto();
+  } else {
+    const drag = document.querySelector(`.draggable[data-item="${itemId}"]`);
+    if (drag) { drag.classList.add('wrong-shake'); setTimeout(()=>drag.classList.remove('wrong-shake'), 500); }
+    const msg = document.getElementById('pfb');
+    msg.className = 'fb clue show'; msg.innerHTML = `❌ Not quite. Think about what this item actually does.`;
+    playSound('wrong');
+  }
+}
+
+function finishPracticeAuto(){
+  const msg = document.getElementById('pfb');
+  msg.className = 'fb correct show'; msg.innerHTML = `🎉 Excellent! Practice complete!`;
+  document.getElementById('pnext').classList.add('show');
+}
+
+function finishPractice(){
+  activeMission.practiceDone = true;
+  saveGame(true);
+  renderQ();
+}
+
+/* ============ QUESTIONS ============ */
+function renderQ(){
+  const m = activeMission;
+  if (m.idx >= m.questions.length) {
+    m.done = true;
+    const nextId = m.id + 1;
+    if (state.districts[nextId]) state.districts[nextId].unlocked = true;
+    state.districtsDone = state.districts.filter(d => d.done).length;
+    updateHUD(); checkAchievements(); rebuildCity(); saveGame(true);
+    if (state.districtsDone === state.districts.length) showFinal();
+    else toast('✅ District Complete! Next unlocked!', true);
+    closeModal();
+    return;
+  }
+  const q = m.questions[m.idx];
+  const progress = (m.idx / m.questions.length) * 100;
+  modalContent.innerHTML = `
+    <div class="m-header">
+      <div class="m-icon">${m.icon}</div>
+      <div><h2>${m.name}</h2><p>Challenge ${m.idx+1} of ${m.questions.length}</p></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>
+    <div class="q-box">
+      <div class="q-num">Question ${m.idx+1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts">
+        ${q.o.map((opt,i)=>`<button class="option" data-i="${i}" onclick="pick(${i})">${opt}</button>`).join('')}
+      </div>
+      <div class="fb" id="fb"></div>
+      <button class="next-btn" id="nextBtn" onclick="nextQ()">Next ➜</button>
+    </div>
+  `;
+  answered = false;
+}
+
+/* ============================================================
+   MAIN ANSWER FUNCTION — shows EXPLANATION on correct,
+   CLUE on wrong (does NOT reveal the answer)
+   ============================================================ */
+function pick(i){
+  if (answered) return;
+  const q = activeMission.questions[activeMission.idx];
+  const opts = document.querySelectorAll('.option');
+  const fb = document.getElementById('fb');
+
+  if (i === q.c) {
+    answered = true;
+    opts.forEach(o => o.classList.add('dis'));
+    opts[i].classList.add('correct');
+    state.score += 10; state.correct++; state.total++; state.streak++; state.coins += 5;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+    const expl = q.e || '';
+    const explHTML = expl
+      ? `<div class="expl-box"><div class="expl-title">📘 Explanation</div>${expl}</div>`
+      : '';
+
+    if (state.streak > 0 && state.streak % 3 === 0) {
+      state.score += 5; state.coins += 3;
+      fb.className = 'fb correct show';
+      fb.innerHTML = `✅ <strong>Correct!</strong> +10 points · +5 coins · 🔥 Streak ${state.streak} bonus +5!${explHTML}`;
+    } else {
+      fb.className = 'fb correct show';
+      fb.innerHTML = `✅ <strong>Correct!</strong> +10 points · +5 coins${explHTML}`;
+    }
+    addXP(15); playSound('correct'); updateHUD(); checkAchievements();
+    document.getElementById('nextBtn').classList.add('show');
+    saveGame(true);
+  } else {
+    opts[i].classList.add('wrong'); opts[i].classList.add('dis');
+    state.streak = 0;
+    fb.className = 'fb clue show';
+    fb.innerHTML = `🧠 <strong>Learning Clue:</strong> ${q.clue}`;
+    playSound('wrong'); updateHUD();
+  }
+}
+
+function nextQ(){
+  activeMission.idx++;
+  saveGame(true);
+  renderQ();
+}
+
+function updateHUD(){
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('coins').textContent = state.coins;
+  document.getElementById('missions').textContent = state.districtsDone + '/7';
+  document.getElementById('streak').textContent = state.streak;
+  updateXPUI();
+}
+
+/* ============================================================
+   ACHIEVEMENTS
+   ============================================================ */
+function checkAchievements(){
+  ACHV.forEach(a => {
+    if (!state.achievements[a.id] && a.check(state)) {
+      state.achievements[a.id] = true;
+      toast(`🏅 Achievement: ${a.name}!`, true);
+      playSound('levelup');
+    }
+  });
+  saveGame(true);
+}
+
+function openAchievements(){
+  const grid = document.getElementById('achv-grid');
+  grid.innerHTML = '';
+  ACHV.forEach(a => {
+    const unlocked = state.achievements[a.id];
+    const card = document.createElement('div');
+    card.className = 'achv-card ' + (unlocked ? 'unlocked' : 'locked');
+    card.innerHTML = `<div class="ai">${unlocked ? a.icon : '🔒'}</div><div class="an">${a.name}</div><div class="ad">${a.desc}</div>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('achv-overlay').classList.add('active');
+}
+
+function openPicker(){
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = '';
+  state.districts.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'picker-card';
+    if (!d.unlocked) card.style.opacity = '0.5';
+    card.innerHTML = `<div class="pi">${d.icon}</div><div class="pn">${d.name}</div><div class="ps">${d.unlocked ? (d.done ? '✓ Completed' : d.idx + '/' + d.questions.length) : '🔒 Locked'}</div>`;
+    card.addEventListener('click', () => {
+      if (!d.unlocked) { toast('🔒 Locked!', false); return; }
+      document.getElementById('picker-overlay').classList.remove('active');
+      openMission(i);
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById('picker-overlay').classList.add('active');
+}
+
+function showFinal(){
+  const acc = state.total === 0 ? 100 : Math.round(state.correct / state.total * 100);
+  document.getElementById('f-score').textContent = state.score + ' Points · ' + state.coins + ' Coins';
+  document.getElementById('f-stats').innerHTML = `Level <b>${state.level}</b> — ${state.title} · Accuracy <b>${acc}%</b> · Best Streak <b>${state.bestStreak}</b>`;
+  let msg = acc >= 90 ? "🏅 Outstanding! You mastered PC City!" :
+            acc >= 70 ? "🎖️ Great job! Review weaker areas." :
+            "📘 Good effort! Replay districts to strengthen.";
+  document.getElementById('f-msg').textContent = msg;
+  document.getElementById('final-screen').classList.add('show');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadGame();
+rebuildCity();
+updateHUD();
+updatePlayerPos();
+gameLoop();
+
+setInterval(() => saveGame(true), 30000);
+</script>
+</body>
+</html>
