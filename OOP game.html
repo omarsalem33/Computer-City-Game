@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OOP Adventure World</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:linear-gradient(135deg,#0f1729 0%,#1a2540 100%);color:#fff;min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;padding:20px}
+.screen.active{display:block}
+
+/* LOGIN */
+.login{max-width:520px;margin:50px auto;background:rgba(26,37,64,.95);padding:40px;border-radius:20px;border:2px solid #4f7cff;box-shadow:0 20px 60px rgba(79,124,255,.3)}
+.login h1{font-size:2em;text-align:center;color:#4f7cff;margin-bottom:10px}
+.login p{text-align:center;color:#8b9dc3;margin-bottom:25px;font-size:.9em}
+.field{margin-bottom:18px}
+.field label{display:block;color:#8b9dc3;margin-bottom:8px;font-size:.9em}
+.field input{width:100%;padding:14px 18px;border-radius:10px;border:2px solid #2a3a5c;background:#0f1729;color:#fff;font-size:1em;outline:none}
+.field input:focus{border-color:#4f7cff}
+.avatar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:15px 0}
+.avatar-item{font-size:1.7em;padding:10px;border-radius:10px;background:#0f1729;border:2px solid #2a3a5c;cursor:pointer;text-align:center;transition:.3s}
+.avatar-item:hover{border-color:#4f7cff}
+.avatar-item.selected{border-color:#4f7cff;background:rgba(79,124,255,.2);transform:scale(1.1)}
+.btn{padding:14px 25px;border-radius:10px;border:none;font-size:1em;font-weight:600;cursor:pointer;transition:.3s;width:100%}
+.btn-primary{background:#4f7cff;color:#fff}
+.btn-primary:hover{background:#3b6aff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(79,124,255,.4)}
+.btn-secondary{background:transparent;border:2px solid #4f7cff;color:#4f7cff}
+.btn-secondary:hover{background:#4f7cff;color:#fff}
+
+/* GAME */
+.game-wrap{max-width:1300px;margin:0 auto}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:rgba(26,37,64,.95);border-radius:14px;margin-bottom:15px;border:2px solid #2a3a5c;flex-wrap:wrap;gap:10px}
+.top-bar .player{display:flex;align-items:center;gap:12px}
+.top-bar .avatar{font-size:2em}
+.top-bar .name{font-weight:600}
+.top-bar .stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:#0f1729;padding:8px 14px;border-radius:8px;font-size:.85em;color:#8b9dc3;border:1px solid #2a3a5c}
+.stat b{color:#4f7cff;font-weight:700}
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:15px}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+
+/* MAP */
+.map-container{background:rgba(26,37,64,.95);border-radius:14px;padding:20px;border:2px solid #2a3a5c}
+.map-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px}
+.map-header h2{color:#fff;font-size:1.1em}
+.map-header .info{color:#8b9dc3;font-size:.85em}
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;max-height:600px;overflow-y:auto;padding:5px}
+.station-card{background:linear-gradient(135deg,#141f38,#1e2a45);border:2px solid #2a3a5c;border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.3s;position:relative;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.station-card:hover:not(.done){border-color:#4f7cff;transform:translateY(-5px);box-shadow:0 12px 30px rgba(79,124,255,.4);background:linear-gradient(135deg,#1e2a45,#2a3a5c)}
+.station-card.done{border-color:#22c55e;background:linear-gradient(135deg,#0d2015,#1a3a25);opacity:.85}
+.station-card.done:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(34,197,94,.3)}
+.station-card .icon{font-size:2.8em;margin-bottom:4px}
+.station-card .name{font-size:.8em;color:#c5d1e8;font-weight:600;line-height:1.3}
+.station-card .cat{font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.station-card .checkmark{position:absolute;top:8px;right:8px;background:#22c55e;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75em;font-weight:bold}
+.station-card .qcount{position:absolute;top:8px;left:8px;background:rgba(79,124,255,.2);color:#4f7cff;padding:2px 8px;border-radius:10px;font-size:.65em;font-weight:700}
+.station-card.next{border-color:#f9c74f;animation:nextPulse 2s infinite}
+@keyframes nextPulse{0%,100%{box-shadow:0 0 0 0 rgba(249,199,79,.5)}50%{box-shadow:0 0 0 12px rgba(249,199,79,0)}}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:15px}
+.panel{background:rgba(26,37,64,.95);border-radius:14px;padding:15px;border:2px solid #2a3a5c}
+.panel h3{color:#fff;margin-bottom:12px;font-size:.95em;padding-bottom:8px;border-bottom:1px solid #2a3a5c}
+.leaderboard-list{list-style:none}
+.leaderboard-list li{display:flex;justify-content:space-between;padding:8px 0;font-size:.85em;color:#8b9dc3;border-bottom:1px solid #1a2540}
+.leaderboard-list li:last-child{border:none}
+.leaderboard-list .rank{color:#4f7cff;font-weight:700;margin-right:8px}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{background:rgba(79,124,255,.15);border:1px solid #4f7cff;padding:5px 10px;border-radius:16px;font-size:.75em;color:#4f7cff;font-weight:600}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,41,.95);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:linear-gradient(135deg,#1a2540,#141f38);border-radius:18px;padding:28px;max-width:750px;width:100%;max-height:92vh;overflow-y:auto;border:2px solid #4f7cff;animation:slideIn .3s}
+@keyframes slideIn{from{transform:translateY(-30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid #2a3a5c}
+.modal-header h2{color:#fff;font-size:1.2em}
+.modal-header .progress{color:#4f7cff;font-size:.9em;font-weight:700;background:rgba(79,124,255,.15);padding:5px 12px;border-radius:12px}
+.close-btn{background:#2a3a5c;color:#fff;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;transition:.3s}
+.close-btn:hover{background:#ef4444}
+.timer-display{text-align:center;margin-bottom:20px}
+.timer-num{font-size:2.2em;font-weight:700;color:#4f7cff;margin-bottom:8px}
+.timer-num.warning{color:#ef4444}
+.timer-bar{height:6px;background:#0f1729;border-radius:3px;overflow:hidden}
+.timer-fill{height:100%;background:#4f7cff;transition:width 1s linear}
+.q-cat{display:inline-block;background:rgba(79,124,255,.15);color:#4f7cff;padding:6px 14px;border-radius:16px;font-size:.75em;font-weight:700;margin-bottom:15px;text-transform:uppercase}
+.q-text{font-size:1.15em;line-height:1.6;margin-bottom:20px}
+.q-code{background:#0a1120;padding:15px;border-radius:10px;font-family:'Courier New',monospace;color:#4f7cff;margin:12px 0;font-size:.9em;line-height:1.5;overflow-x:auto;white-space:pre;border:1px solid #2a3a5c}
+.options{display:grid;gap:10px}
+.option-btn{background:#0f1729;border:2px solid #2a3a5c;color:#fff;padding:15px 18px;border-radius:10px;font-size:.95em;text-align:left;cursor:pointer;transition:.3s;display:flex;align-items:center;gap:12px;font-family:inherit}
+.option-btn:hover:not(:disabled){border-color:#4f7cff;background:#1a2540}
+.option-btn.correct{background:rgba(34,197,94,.15);border-color:#22c55e}
+.option-btn.wrong{background:rgba(239,68,68,.15);border-color:#ef4444}
+.option-btn:disabled{cursor:not-allowed;opacity:.85}
+.option-letter{background:#2a3a5c;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.85em}
+.option-btn.correct .option-letter{background:#22c55e}
+.option-btn.wrong .option-letter{background:#ef4444}
+
+.feedback{margin-top:18px;padding:18px;border-radius:12px;display:none}
+.feedback.show{display:block}
+.feedback.correct{background:rgba(34,197,94,.1);border:1px solid #22c55e}
+.feedback.wrong{background:rgba(239,68,68,.1);border:1px solid #ef4444}
+.feedback .title{font-size:1.2em;font-weight:700;margin-bottom:12px}
+.feedback.correct .title{color:#22c55e}
+.feedback.wrong .title{color:#ef4444}
+.explain-box{background:#0f1729;padding:14px;border-radius:10px;margin-top:12px;font-size:.9em;line-height:1.6;color:#c5d1e8;border-left:3px solid #4f7cff}
+.explain-box b{color:#4f7cff;display:block;margin-bottom:6px}
+.next-btn{background:#4f7cff;color:#fff;border:none;padding:14px 25px;border-radius:10px;font-size:1em;font-weight:600;cursor:pointer;width:100%;margin-top:15px;transition:.3s;font-family:inherit}
+.next-btn:hover{background:#3b6aff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(79,124,255,.4)}
+
+/* TEACHER */
+.teacher-panel{max-width:1100px;margin:20px auto;background:rgba(26,37,64,.95);padding:25px;border-radius:18px;border:2px solid #4f7cff}
+.teacher-panel h2{color:#fff;margin-bottom:20px}
+.students-table{width:100%;border-collapse:collapse}
+.students-table th,.students-table td{padding:10px;text-align:left;border-bottom:1px solid #2a3a5c;font-size:.85em;color:#c5d1e8}
+.students-table th{color:#4f7cff;font-weight:700;background:#0f1729}
+.password-modal{background:linear-gradient(135deg,#1a2540,#141f38);border-radius:18px;padding:35px;max-width:400px;width:100%;border:2px solid #4f7cff;text-align:center}
+.password-modal h2{color:#fff;margin-bottom:10px}
+.password-modal p{color:#8b9dc3;margin-bottom:20px;font-size:.9em}
+.password-modal input{width:100%;padding:14px;border-radius:10px;border:2px solid #2a3a5c;background:#0f1729;color:#fff;font-size:1.1em;text-align:center;letter-spacing:4px;outline:none;margin-bottom:15px}
+.password-modal input:focus{border-color:#4f7cff}
+.error-msg{color:#ef4444;font-size:.85em;margin-bottom:15px;min-height:20px}
+.toast{position:fixed;top:20px;right:20px;background:#4f7cff;color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;z-index:4000;animation:toastIn .3s;box-shadow:0 10px 30px rgba(79,124,255,.4)}
+@keyframes toastIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active">
+  <div class="login">
+    <h1>🎮 OOP Adventure World</h1>
+    <p>Explore stations • Answer 5 questions each • Collect points</p>
+    <div class="field">
+      <label>👤 Your Name</label>
+      <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+    </div>
+    <div class="field">
+      <label>👥 Your Team (optional)</label>
+      <input type="text" id="playerTeam" placeholder="e.g., Red Dragons" maxlength="20">
+    </div>
+    <div class="field">
+      <label>🎭 Choose Your Character</label>
+      <div class="avatar-grid" id="avatarGrid"></div>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">🚀 Start Adventure</button>
+    <button class="btn btn-secondary" onclick="askTeacherPassword()" style="margin-top:10px">👨‍🏫 Teacher Panel</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen" class="screen">
+  <div class="game-wrap">
+    <div class="top-bar">
+      <div class="player">
+        <span class="avatar" id="myAvatar">🐉</span>
+        <span class="name" id="myName">Player</span>
+      </div>
+      <div class="stats">
+        <div class="stat">🏆 Points: <b id="statScore">0</b></div>
+        <div class="stat">✅ Correct: <b id="statCorrect">0</b></div>
+        <div class="stat">❌ Wrong: <b id="statWrong">0</b></div>
+        <div class="stat">🎯 Stations: <b id="statStations">0</b>/50</div>
+      </div>
+    </div>
+    <div class="main-grid">
+      <div class="map-container">
+        <div class="map-header">
+          <h2>🗺️ Adventure Map</h2>
+          <span class="info" id="mapInfo">Click any station to start</span>
+        </div>
+        <div class="map" id="map"></div>
+      </div>
+      <div class="sidebar">
+        <div class="panel">
+          <h3>🏆 Top Score</h3>
+          <ul class="leaderboard-list" id="lbScore"></ul>
+        </div>
+        <div class="panel">
+          <h3>🎯 Most Correct</h3>
+          <ul class="leaderboard-list" id="lbCorrect"></ul>
+        </div>
+        <div class="panel">
+          <h3>🏅 Your Badges</h3>
+          <div class="badges" id="myBadges">
+            <span style="color:#8b9dc3;font-size:.8em">No badges yet</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>⚙️ Actions</h3>
+          <button class="btn btn-secondary" onclick="showLeaderboard()" style="margin-bottom:8px">📊 Full Leaderboard</button>
+          <button class="btn btn-secondary" onclick="logout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER -->
+<div id="teacherScreen" class="screen">
+  <div class="teacher-panel">
+    <h2>👨‍🏫 Teacher Panel</h2>
+    <button class="btn btn-secondary" onclick="backToLogin()" style="margin-bottom:15px;width:auto;padding:10px 20px">← Back</button>
+    <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="refreshTeacher()" style="width:auto;padding:10px 20px">🔄 Refresh</button>
+      <button class="btn btn-secondary" onclick="exportData()" style="width:auto;padding:10px 20px">📥 Export CSV</button>
+      <button class="btn btn-secondary" onclick="resetAll()" style="width:auto;padding:10px 20px;background:#ef4444;color:#fff;border-color:#ef4444">🗑️ Reset All</button>
+    </div>
+    <table class="students-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Avatar</th><th>Name</th><th>Team</th>
+          <th>Points</th><th>Correct</th><th>Wrong</th>
+          <th>Stations</th><th>Badges</th>
+        </tr>
+      </thead>
+      <tbody id="studentsTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div id="passwordModal" class="modal-overlay">
+  <div class="password-modal">
+    <h2>🔐 Teacher Access</h2>
+    <p>Enter the password to continue</p>
+    <input type="password" id="teacherPassword" placeholder="••••••" maxlength="10" onkeypress="if(event.key==='Enter')checkTeacherPassword()">
+    <div class="error-msg" id="pwError"></div>
+    <button class="btn btn-primary" onclick="checkTeacherPassword()">🔓 Unlock</button>
+    <button class="btn btn-secondary" onclick="closePasswordModal()" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- QUESTION MODAL -->
+<div id="questionModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Station</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="progress" id="qProgress">1/5</span>
+        <button class="close-btn" onclick="closeQuestion()">✕</button>
+      </div>
+    </div>
+    <div class="timer-display">
+      <div class="timer-num" id="timerNum">60</div>
+      <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    </div>
+    <div class="q-cat" id="qCategory">Category</div>
+    <div class="q-text" id="qText"></div>
+    <div id="qCodeContainer"></div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<!-- LEADERBOARD MODAL -->
+<div id="lbModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🏆 Full Leaderboard</h2>
+      <button class="close-btn" onclick="document.getElementById('lbModal').classList.remove('active')">✕</button>
+    </div>
+    <div id="lbContent"></div>
+  </div>
+</div>
+
+<script>
+// ==================== QUESTION BANK ====================
+const QUESTION_BANK = [
+  // CLASS & OBJECT (30)
+  {cat:"Class & Object", diff:1, q:"What does a class represent in OOP?", options:["A template for creating objects","A real-world entity","A function","A variable"], correct:0, hint:"Think of it as a blueprint.", explain:"A class is a blueprint that defines the structure and behavior of objects."},
+  {cat:"Class & Object", diff:1, q:"Which keyword creates an object in Python?", options:["new","create","class_name()","object()"], correct:2, hint:"Just call the class name.", explain:"In Python, you create an object by calling the class name followed by ()."},
+  {cat:"Class & Object", diff:1, q:"How many classes are needed to create 10 objects?", options:["1","10","20","0"], correct:0, hint:"One class → many objects.", explain:"One class is enough to create unlimited objects."},
+  {cat:"Class & Object", diff:2, q:"What is the output?", code:`class Book:\n    pass\nb = Book()\nprint(type(b).__name__)`, options:["Book","object","type","None"], correct:0, hint:"The class name is Book.", explain:"type(b).__name__ returns the class name 'Book'."},
+  {cat:"Class & Object", diff:2, q:"Which is NOT a valid class name?", options:["Student","_Car","2Wheeler","MyClass"], correct:2, hint:"Cannot start with a number.", explain:"Class names cannot start with a digit."},
+  {cat:"Class & Object", diff:2, q:"What is instantiation?", options:["Creating a class","Creating an object from a class","Deleting an object","Editing a class"], correct:1, hint:"Instance = object.", explain:"Instantiation is the process of creating an object from a class."},
+  {cat:"Class & Object", diff:3, q:"What is the output?", code:`class A:\n    pass\na = A()\nb = A()\nprint(a is b)`, options:["True","False","Error","None"], correct:1, hint:"Each object is unique.", explain:"Each object has a unique identity, so 'a is b' returns False."},
+  {cat:"Class & Object", diff:3, q:"How many objects exist after this code?", code:`a = Student()\nb = a\nc = Student()`, options:["1","2","3","0"], correct:1, hint:"b refers to a.", explain:"b = a doesn't create a new object, so only 2 objects exist."},
+  {cat:"Class & Object", diff:1, q:"Which is a real-life class?", options:["My phone","Phone","iPhone 15","Ahmed's phone"], correct:1, hint:"General concept.", explain:"'Phone' is a general concept (class)."},
+  {cat:"Class & Object", diff:1, q:"Which is a real-life object?", options:["Animal","Cat","My cat Mimi","Mammal"], correct:2, hint:"Specific instance.", explain:"'My cat Mimi' is a specific instance (object)."},
+  {cat:"Class & Object", diff:2, q:"What does __name__ return inside a class?", options:["The object name","The class name","The method name","An error"], correct:1, hint:"Class identifier.", explain:"__name__ returns the class name as a string."},
+  {cat:"Class & Object", diff:3, q:"Can an object be created without a class?", options:["Yes","No","Only in Python 3","Only with new keyword"], correct:1, hint:"Every object needs a class.", explain:"In OOP, every object must belong to a class."},
+  {cat:"Class & Object", diff:2, q:"What is the output?", code:`class A:\n    x = 10\na = A()\nprint(a.x)`, options:["10","None","Error","x"], correct:0, hint:"Class attributes accessible.", explain:"Class attributes are accessible from objects."},
+  {cat:"Class & Object", diff:1, q:"Which symbol ends a class header in Python?", options:[".",";",":",","], correct:2, hint:"It's a colon.", explain:"Class statement ends with a colon (:)."},
+  {cat:"Class & Object", diff:2, q:"What does 'instance' mean?", options:["A class","An object","A method","A variable"], correct:1, hint:"Same as object.", explain:"'Instance' and 'object' mean the same thing."},
+  {cat:"Class & Object", diff:3, q:"What is the output?", code:`class A:\n    pass\nprint(A)`, options:["<class '__main__.A'>","A","Error","None"], correct:0, hint:"Class representation.", explain:"Printing a class shows its representation including module name."},
+  {cat:"Class & Object", diff:1, q:"Can a class have no methods?", options:["Yes","No","Only in Python","Only if empty"], correct:0, hint:"Use pass keyword.", explain:"Use 'pass' as a placeholder for empty class body."},
+  {cat:"Class & Object", diff:2, q:"What does `pass` do inside a class?", options:["Nothing (placeholder)","Stops the class","Creates an object","Prints the class"], correct:0, hint:"Placeholder.", explain:"'pass' is a null statement used as a placeholder."},
+  {cat:"Class & Object", diff:3, q:"What is the output?", code:`class A:\n    pass\na = A()\nprint(isinstance(a, A))`, options:["True","False","Error","None"], correct:0, hint:"a is an instance of A.", explain:"isinstance() checks if object is instance of class."},
+  {cat:"Class & Object", diff:2, q:"Which of these creates a class?", options:["class MyClass:","MyClass:","def MyClass:","new MyClass:"], correct:0, hint:"Use class keyword.", explain:"In Python, use 'class' keyword followed by name and colon."},
+  {cat:"Class & Object", diff:1, q:"What is a class name convention in Python?", options:["camelCase","snake_case","PascalCase","UPPERCASE"], correct:2, hint:"Starts with capital.", explain:"Python classes use PascalCase (each word capitalized)."},
+  {cat:"Class & Object", diff:2, q:"What is the output?", code:`class A:\n    pass\nprint(A.__name__)`, options:["A","<class>","A()","None"], correct:0, hint:"Class name attribute.", explain:"__name__ returns the class name as a string."},
+  {cat:"Class & Object", diff:3, q:"Can you create objects of built-in classes?", options:["Yes","No","Only in Python 3","Only if defined"], correct:0, hint:"Everything is an object.", explain:"In Python, everything is an object. Built-in types like int, str are classes too."},
+  {cat:"Class & Object", diff:1, q:"What is an object also called?", options:["Instance","Method","Function","Variable"], correct:0, hint:"Same as instance.", explain:"An object is also called an instance of a class."},
+  {cat:"Class & Object", diff:2, q:"How do you know the class of an object?", options:["obj.type()","type(obj)","obj.__type__","getType(obj)"], correct:1, hint:"Use type() function.", explain:"type(obj) returns the class of the object."},
+  {cat:"Class & Object", diff:3, q:"What is the output?", code:`class A:\n    pass\na = A()\nprint(type(a) == A)`, options:["True","False","Error","None"], correct:0, hint:"Type comparison.", explain:"type(a) returns class A, so it equals A."},
+  {cat:"Class & Object", diff:1, q:"What does OOP stand for?", options:["Object-Oriented Programming","Only Object Programming","Open Object Programming","Overloaded Object Programming"], correct:0, hint:"Object + Oriented.", explain:"OOP = Object-Oriented Programming."},
+  {cat:"Class & Object", diff:2, q:"Which of these is NOT an OOP concept?", options:["Encapsulation","Inheritance","Compilation","Polymorphism"], correct:2, hint:"It's about building code.", explain:"Compilation is not an OOP concept."},
+  {cat:"Class & Object", diff:3, q:"What is the output?", code:`class A:\n    x = 5\na = A()\nb = A()\na.x = 10\nprint(a.x, b.x)`, options:["10 10","10 5","5 5","5 10"], correct:1, hint:"Instance overrides.", explain:"a.x creates instance attribute for a only. b.x still refers to class attribute 5."},
+  {cat:"Class & Object", diff:2, q:"Can you have multiple classes in one file?", options:["Yes","No","Only in Python 3","Only with import"], correct:0, hint:"Yes.", explain:"You can define multiple classes in the same Python file."},
+
+  // ATTRIBUTES (30)
+  {cat:"Attributes", diff:1, q:"Where are instance attributes defined?", options:["In class body","Inside __init__","Outside class","In a loop"], correct:1, hint:"Inside constructor.", explain:"Instance attributes are usually defined in __init__ using self.attribute = value."},
+  {cat:"Attributes", diff:2, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 5\na = A()\nprint(a.x)`, options:["5","None","Error","x"], correct:0, hint:"self.x = 5.", explain:"The constructor sets self.x = 5, so a.x returns 5."},
+  {cat:"Attributes", diff:2, q:"What happens if you access a non-existent attribute?", options:["Returns None","AttributeError","Returns 0","Empty string"], correct:1, hint:"Error raised.", explain:"Python raises AttributeError."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    x = 5\n    def __init__(self):\n        self.x = 10\na = A()\nprint(a.x)`, options:["5","10","Error","None"], correct:1, hint:"Instance overrides class.", explain:"Instance attribute overrides class attribute."},
+  {cat:"Attributes", diff:2, q:"How to access a class attribute?", options:["ClassName.attr","ClassName->attr","ClassName::attr","attr.ClassName"], correct:0, hint:"Dot notation.", explain:"Use ClassName.attribute_name."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    x = 5\na = A()\nb = A()\na.x = 10\nprint(A.x, b.x)`, options:["5 5","10 5","10 10","5 10"], correct:0, hint:"Class attr unchanged.", explain:"Setting a.x only affects instance a, not class attribute."},
+  {cat:"Attributes", diff:1, q:"Which is a class attribute?", options:["self.name","self.age","schoolName","self.grade"], correct:2, hint:"No self prefix.", explain:"Class attributes are defined at class level without self."},
+  {cat:"Attributes", diff:1, q:"Which is an instance attribute?", options:["schoolName","self.name","vehicle_type","class"], correct:1, hint:"Uses self.", explain:"Instance attributes use self."},
+  {cat:"Attributes", diff:2, q:"What does `self.name = name` do?", options:["Creates class attribute","Creates instance attribute","Deletes attribute","Reads attribute"], correct:1, hint:"Per object.", explain:"Creates an instance attribute unique to each object."},
+  {cat:"Attributes", diff:3, q:"Can you change a class attribute?", options:["Yes, affects all","No","Only in __init__","Only with self"], correct:0, hint:"It's shared.", explain:"Changing a class attribute affects all objects that don't have their own instance attribute."},
+  {cat:"Attributes", diff:2, q:"What is the output?", code:`class A:\n    def __init__(self, v):\n        self.v = v\na = A(10)\nb = A(20)\nprint(a.v + b.v)`, options:["30","1020","Error","10 20"], correct:0, hint:"Add numbers.", explain:"10 + 20 = 30."},
+  {cat:"Attributes", diff:1, q:"What are attributes also called?", options:["Methods","Properties","Functions","Loops"], correct:1, hint:"Another word.", explain:"Attributes are also called properties, fields, or data members."},
+  {cat:"Attributes", diff:2, q:"How many attributes does each object have?", options:["Only 1","Only 2","As many as defined","0"], correct:2, hint:"Depends on class.", explain:"Each object has all attributes defined for its class."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    pass\na = A()\na.x = 5\nb = A()\nprint(b.x)`, options:["5","0","AttributeError","None"], correct:2, hint:"b has no x.", explain:"a.x = 5 only adds x to a, not to class. So b has no x attribute."},
+  {cat:"Attributes", diff:2, q:"Where can you set instance attributes?", options:["Only in __init__","In any method using self","Outside class","In comments"], correct:1, hint:"Anywhere with self.", explain:"You can set instance attributes in any method using self."},
+  {cat:"Attributes", diff:1, q:"Difference between class and instance attributes?", options:["No difference","Class shared, instance unique","Class unique, instance shared","Both shared"], correct:1, hint:"Class = shared.", explain:"Class attributes are shared by all objects. Instance attributes are unique."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    x = []\n    def add(self, v):\n        self.x.append(v)\na = A()\nb = A()\na.add(1)\nprint(b.x)`, options:["[]","[1]","Error","None"], correct:1, hint:"Mutable shared.", explain:"Mutable class attribute is shared! To avoid, use self.x = [] in __init__."},
+  {cat:"Attributes", diff:2, q:"Which attribute is unique to each object?", options:["Class attribute","Instance attribute","Both","None"], correct:1, hint:"Instance = per object.", explain:"Instance attributes are unique to each object."},
+  {cat:"Attributes", diff:1, q:"How do you access an attribute?", options:["obj.attr","obj->attr","obj::attr","attr.obj"], correct:0, hint:"Dot notation.", explain:"Use obj.attribute_name."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, x):\n        self.x = x\na = A(5)\na.x = 10\nprint(a.x)`, options:["5","10","Error","None"], correct:1, hint:"Reassigned.", explain:"Attributes can be reassigned."},
+  {cat:"Attributes", diff:1, q:"What does an attribute represent?", options:["Behavior","Data/State","Class","Method"], correct:1, hint:"Data.", explain:"Attributes represent the data or state of an object."},
+  {cat:"Attributes", diff:2, q:"Can attributes be numbers?", options:["Yes","No","Only strings","Only in Python"], correct:0, hint:"Any type.", explain:"Attributes can be any type: numbers, strings, lists, even other objects."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 5\n    def update(self, v):\n        self.x = v\na = A()\na.update(10)\nprint(a.x)`, options:["5","10","Error","None"], correct:1, hint:"Updated.", explain:"The update method changes self.x to 10."},
+  {cat:"Attributes", diff:2, q:"How do you delete an attribute?", options:["del obj.attr","remove obj.attr","delete obj.attr","obj.attr = None"], correct:0, hint:"Use del.", explain:"Use 'del obj.attr' to delete an attribute."},
+  {cat:"Attributes", diff:1, q:"Can two objects share attribute values?", options:["Yes, if same class attr","No","Only strings","Only numbers"], correct:0, hint:"Class attrs shared.", explain:"Class attributes are shared by all objects."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    count = 0\n    def __init__(self):\n        A.count += 1\nA()\nA()\nprint(A.count)`, options:["0","1","2","3"], correct:2, hint:"Count increments.", explain:"Each object creation increments A.count. Two objects → count = 2."},
+  {cat:"Attributes", diff:2, q:"Can attributes have different types in different objects?", options:["Yes","No","Only in Python 3","Only if defined"], correct:0, hint:"Dynamic typing.", explain:"Python is dynamically typed, so attributes can have any type."},
+  {cat:"Attributes", diff:1, q:"What keyword creates an attribute?", options:["attr","var","self.x = value","define"], correct:2, hint:"Assignment.", explain:"Attributes are created by assignment: self.x = value."},
+  {cat:"Attributes", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.data = []\n    def add(self, x):\n        self.data.append(x)\na = A()\nb = A()\na.add(1)\nprint(b.data)`, options:["[]","[1]","Error","None"], correct:0, hint:"Each has own list.", explain:"Each object has its own data list (created in __init__), so b.data is empty."},
+  {cat:"Attributes", diff:2, q:"What is the difference between self.x and x?", options:["No difference","self.x is attribute, x is local","x is attribute, self.x is local","Both are attributes"], correct:1, hint:"self = object.", explain:"self.x refers to instance attribute. x alone is a local variable."},
+
+  // METHODS (30)
+  {cat:"Methods", diff:1, q:"What are methods?", options:["Data","Functions inside a class","Class names","Loops"], correct:1, hint:"Functions inside classes.", explain:"Methods are functions inside a class that define behavior."},
+  {cat:"Methods", diff:2, q:"Which is a method of Student?", options:["grade","ID","name","study()"], correct:3, hint:"Has parentheses.", explain:"Methods have parentheses. 'study()' is a method."},
+  {cat:"Methods", diff:1, q:"What keyword defines a method?", options:["func","def","method","function"], correct:1, hint:"3 letters.", explain:"Methods use 'def' keyword."},
+  {cat:"Methods", diff:2, q:"What is the output?", code:`class A:\n    def hi(self):\n        print("Hi")\na = A()\na.hi()`, options:["Nothing","Hi","Error","A"], correct:1, hint:"Prints Hi.", explain:"The method prints 'Hi'."},
+  {cat:"Methods", diff:3, q:"Can a method return a value?", options:["No","Yes, using return","Only strings","Only numbers"], correct:1, hint:"Use return.", explain:"Methods return values using 'return'."},
+  {cat:"Methods", diff:2, q:"What is the output?", code:`class Calc:\n    def add(self, a, b):\n        return a + b\nc = Calc()\nprint(c.add(3, 4))`, options:["34","7","3 4","Error"], correct:1, hint:"3 + 4.", explain:"3 + 4 = 7."},
+  {cat:"Methods", diff:1, q:"When is a method executed?", options:["When defined","When called","Always","Never"], correct:1, hint:"On call.", explain:"Methods run when called."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.c = 0\n    def inc(self):\n        self.c += 1\n        return self.c\na = A()\nprint(a.inc())\nprint(a.inc())`, options:["1 then 2","0 then 1","2 then 3","1 then 1"], correct:0, hint:"Starts at 0.", explain:"First call → 1, second call → 2."},
+  {cat:"Methods", diff:2, q:"Methods can take parameters besides self.", options:["True","False"], correct:0, hint:"Yes.", explain:"Methods can take any number of parameters."},
+  {cat:"Methods", diff:1, q:"Purpose of a method?", options:["Store data","Define behavior","Create class","Delete objects"], correct:1, hint:"Behavior.", explain:"Methods define what an object can DO (behavior)."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def greet(self, name):\n        return f"Hi {name}"\na = A()\nprint(a.greet("Sara"))`, options:["Hi","Hi Sara","Sara","Error"], correct:1, hint:"f-string.", explain:"f-string replaces {name} with 'Sara'."},
+  {cat:"Methods", diff:2, q:"What is the output?", code:`class A:\n    def hi(self):\n        print("Hi")\na = A()\na.hi()\na.hi()`, options:["Hi","Hi Hi","Nothing","Error"], correct:1, hint:"Called twice.", explain:"Called twice → prints twice."},
+  {cat:"Methods", diff:1, q:"Which is NOT a method?", options:["study()","enroll()","name","show()"], correct:2, hint:"Data, not action.", explain:"'name' is an attribute. The others are methods."},
+  {cat:"Methods", diff:3, q:"Can methods call other methods?", options:["No","Yes, via self","Only in Python","Only if private"], correct:1, hint:"Through self.", explain:"Methods can call other methods using self.method()."},
+  {cat:"Methods", diff:2, q:"What does a method return if no return statement?", options:["0","None","Empty string","Error"], correct:1, hint:"Python default.", explain:"Methods without return return None."},
+  {cat:"Methods", diff:1, q:"What is a valid method call?", options:["s1.study","s1.study()","study(s1)","study.s1()"], correct:1, hint:"object.method().", explain:"Use object.method()."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 5\n    def get(self):\n        return self.x\na = A()\nprint(a.get() + 10)`, options:["5","15","510","Error"], correct:1, hint:"5 + 10.", explain:"a.get() returns 5, then 5 + 10 = 15."},
+  {cat:"Methods", diff:2, q:"Can a method have the same name as an attribute?", options:["Yes","No","Only in Python","Only if private"], correct:0, hint:"Yes, but not recommended.", explain:"Python allows it, but the later definition overrides. Not recommended."},
+  {cat:"Methods", diff:1, q:"Methods are defined inside:", options:["A loop","A class","A variable","A comment"], correct:1, hint:"Blueprint.", explain:"Methods are inside a class."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, n):\n        self.n = n\n    def double(self):\n        return self.n * 2\na = A(5)\nprint(a.double())`, options:["5","10","25","Error"], correct:1, hint:"5 * 2.", explain:"self.n = 5, so 5 * 2 = 10."},
+  {cat:"Methods", diff:1, q:"Can methods access attributes?", options:["Yes, via self","No","Only in Python","Only if private"], correct:0, hint:"Yes.", explain:"Methods access attributes via self.attribute."},
+  {cat:"Methods", diff:2, q:"What is the output?", code:`class A:\n    def set_x(self, v):\n        self.x = v\n    def get_x(self):\n        return self.x\na = A()\na.set_x(10)\nprint(a.get_x())`, options:["10","None","Error","set_x"], correct:0, hint:"Getter/setter.", explain:"set_x sets self.x = 10, get_x returns it."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.items = []\n    def add(self, x):\n        self.items.append(x)\n    def count(self):\n        return len(self.items)\na = A()\na.add(1)\na.add(2)\nprint(a.count())`, options:["0","1","2","3"], correct:2, hint:"Two items.", explain:"Two items added, so count = 2."},
+  {cat:"Methods", diff:2, q:"Can a method modify class attributes?", options:["Yes, via ClassName.attr","No","Only in Python 3","Only if defined"], correct:0, hint:"Yes.", explain:"Use ClassName.attr to modify class attributes."},
+  {cat:"Methods", diff:1, q:"Which of these is a method call?", options:["obj.method","obj.method()","method.obj","method(obj)"], correct:1, hint:"With parentheses.", explain:"Use obj.method() with parentheses."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, name):\n        self.name = name\n    def greet(self):\n        return f"Hello, {self.name}"\na = A("Sara")\nprint(a.greet())`, options:["Hello","Hello, Sara","Sara","Error"], correct:1, hint:"String format.", explain:"f-string replaces {self.name} with 'Sara'."},
+  {cat:"Methods", diff:2, q:"Can a method call itself?", options:["No","Yes (recursion)","Only in Python","Only if private"], correct:1, hint:"Recursion.", explain:"Yes, this is called recursion."},
+  {cat:"Methods", diff:1, q:"What does a method represent?", options:["Data","Behavior","Class","Object"], correct:1, hint:"Behavior.", explain:"Methods represent the behavior of objects."},
+  {cat:"Methods", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 0\n    def inc(self, n=1):\n        self.x += n\n        return self.x\na = A()\na.inc()\na.inc(5)\nprint(a.x)`, options:["1","5","6","Error"], correct:2, hint:"1 + 5.", explain:"First inc() adds 1 (total 1), second inc(5) adds 5 (total 6)."},
+  {cat:"Methods", diff:2, q:"What is the difference between a method and a function?", options:["No difference","Method is inside class","Function is inside class","Both are the same"], correct:1, hint:"Inside class.", explain:"Methods are functions defined inside a class. Functions are standalone."},
+
+  // SELF (30)
+  {cat:"self", diff:1, q:"What does self refer to?", options:["The class","The specific object","A global variable","The parent"], correct:1, hint:"Current object.", explain:"self refers to the specific object calling the method."},
+  {cat:"self", diff:2, q:"Why is self always first?", options:["Optional","Python passes it automatically","A rule","For printing"], correct:1, hint:"Python handles it.", explain:"Python automatically passes the object as self."},
+  {cat:"self", diff:1, q:"You must pass self manually.", options:["True","False"], correct:1, hint:"Python does it.", explain:"Python passes self automatically."},
+  {cat:"self", diff:2, q:"self is passed ________ by Python.", options:["automatically","manually","optionally","never"], correct:0, hint:"Auto.", explain:"Python passes self automatically."},
+  {cat:"self", diff:3, q:"What is the output?", code:`class A:\n    def set_n(self, n):\n        self.n = n\n    def show(self):\n        print(self.n)\na = A()\na.set_n(5)\na.show()`, options:["5","None","Error","n"], correct:0, hint:"self.n = 5.", explain:"set_n stores 5 in self.n. show prints it."},
+  {cat:"self", diff:1, q:"self is a Python keyword.", options:["True","False"], correct:1, hint:"Convention.", explain:"self is just a convention, not a keyword."},
+  {cat:"self", diff:2, q:"self represents the specific ________ using the class.", options:["object","class","variable","function"], correct:0, hint:"Instance.", explain:"self represents the specific object."},
+  {cat:"self", diff:3, q:"Value of self in ahmed.study()?", code:`class Student:\n    def study(self):\n        print("Studying")\nsara = Student()\nahmed = Student()\nahmed.study()`, options:["sara","ahmed","Student","study"], correct:1, hint:"The caller.", explain:"When ahmed.study() is called, self = ahmed."},
+  {cat:"self", diff:2, q:"What does self allow methods to do?", options:["Access object's attributes","Print messages","Create classes","Delete objects"], correct:0, hint:"Connects method to object.", explain:"self allows methods to access the object's attributes and methods."},
+  {cat:"self", diff:1, q:"Different objects have different self values.", options:["True","False"], correct:0, hint:"Unique.", explain:"Each object has its own self."},
+  {cat:"self", diff:2, q:"self refers to the ________ object.", options:["current","first","last","parent"], correct:0, hint:"Right now.", explain:"self refers to the current object."},
+  {cat:"self", diff:3, q:"How many self values here?", code:`s1 = Student()\ns2 = Student()\ns3 = Student()`, options:["1","2","3","0"], correct:2, hint:"One per object.", explain:"Each object has its own self."},
+  {cat:"self", diff:2, q:"If you forget self in a method?", options:["Works fine","TypeError","Ignored","Class deleted"], correct:1, hint:"Python needs it.", explain:"Python raises TypeError."},
+  {cat:"self", diff:1, q:"self can be renamed to anything.", options:["True","False"], correct:0, hint:"Convention.", explain:"Python doesn't require the name 'self'."},
+  {cat:"self", diff:2, q:"The first parameter is conventionally named ________.", options:["self","this","me","obj"], correct:0, hint:"4 letters.", explain:"It's conventionally named self."},
+  {cat:"self", diff:3, q:"Can self be used outside a class?", options:["Yes","No","Only in Python","Only in Java"], correct:1, hint:"Inside only.", explain:"self only has meaning inside a class method."},
+  {cat:"self", diff:2, q:"self is required in all methods.", options:["True","False"], correct:1, hint:"Only instance methods.", explain:"self is required only in instance methods."},
+  {cat:"self", diff:1, q:"self.attr = value creates a(n) ________ attribute.", options:["instance","class","static","global"], correct:0, hint:"Per object.", explain:"self.attr creates an instance attribute."},
+  {cat:"self", diff:3, q:"Value of self in x.show()?", code:`class A:\n    def show(self):\n        pass\nx = A()\ny = A()\nx.show()`, options:["x","y","A","self"], correct:0, hint:"The caller.", explain:"When x.show() is called, self = x."},
+  {cat:"self", diff:2, q:"self inside __init__ refers to:", options:["New object","Old object","Class","Parent"], correct:0, hint:"Newly created.", explain:"self in __init__ refers to the newly created object."},
+  {cat:"self", diff:1, q:"What is the type of self?", options:["The class type","A string","An integer","A function"], correct:0, hint:"Same as object.", explain:"self is of the same type as the class."},
+  {cat:"self", diff:2, q:"Why do methods need self?", options:["To identify the object","To print","To loop","To create classes"], correct:0, hint:"Object identity.", explain:"To know which object's attributes to access."},
+  {cat:"self", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, v):\n        self.v = v\n    def get(self):\n        return self.v\na = A(10)\nb = A(20)\nprint(a.get(), b.get())`, options:["10 20","20 10","10 10","20 20"], correct:0, hint:"Each has own v.", explain:"a.v = 10, b.v = 20."},
+  {cat:"self", diff:1, q:"Is self a reserved word in Python?", options:["Yes","No","Only in Python 3","Only in classes"], correct:1, hint:"Convention only.", explain:"self is not a reserved word."},
+  {cat:"self", diff:2, q:"Can you use 'this' instead of self?", options:["Yes","No","Only in Python 3","Only if defined"], correct:0, hint:"Yes but not recommended.", explain:"Yes, Python allows it, but 'self' is the convention."},
+  {cat:"self", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 0\n    def inc(self):\n        self.x += 1\n        return self\na = A()\na.inc().inc().inc()\nprint(a.x)`, options:["0","1","2","3"], correct:3, hint:"Chained calls.", explain:"Method chaining: three inc() calls → x = 3."},
+  {cat:"self", diff:1, q:"self refers to:", options:["The class","The instance","The function","The module"], correct:1, hint:"Instance.", explain:"self refers to the instance (object)."},
+  {cat:"self", diff:2, q:"self is passed as the ________ argument.", options:["first","second","last","any"], correct:0, hint:"First.", explain:"self is always the first parameter."},
+  {cat:"self", diff:3, q:"What is the output?", code:`class Counter:\n    def __init__(self):\n        self.n = 0\n    def inc(self):\n        self.n += 1\nc = Counter()\nc.inc()\nc.inc()\nprint(c.n)`, options:["0","1","2","3"], correct:2, hint:"Called twice.", explain:"Two calls → n = 2."},
+  {cat:"self", diff:2, q:"Can self be used to call other methods?", options:["Yes","No","Only in Python","Only if defined"], correct:0, hint:"Yes.", explain:"Use self.method() to call other methods."},
+
+  // CONSTRUCTOR (30)
+  {cat:"Constructor", diff:1, q:"What is a constructor?", options:["Destroys objects","Method named __init__ runs automatically","Loop","Shared variable"], correct:1, hint:"Initializes.", explain:"The constructor (__init__) initializes objects."},
+  {cat:"Constructor", diff:1, q:"Correct name for constructor?", options:["__init__","__construct__","init","constructor"], correct:0, hint:"Double underscores.", explain:"Python's constructor is __init__."},
+  {cat:"Constructor", diff:3, q:"What will print?", code:`class Patient:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n        print(f"{self.name} is {self.age}")\np1 = Patient("Ali", 30)`, options:["Nothing","Ali is 30","Error","Patient"], correct:1, hint:"Constructor prints.", explain:"Prints 'Ali is 30'."},
+  {cat:"Constructor", diff:1, q:"Constructor runs automatically.", options:["True","False"], correct:0, hint:"Yes.", explain:"Constructor runs when object is created."},
+  {cat:"Constructor", diff:2, q:"Constructor can have ________ parameter values.", options:["default","no","only one","private"], correct:0, hint:"Optional.", explain:"Constructors can have default values."},
+  {cat:"Constructor", diff:3, q:"Output?", code:`class AI:\n    def __init__(self, name, lang="English"):\n        self.name = name\n        self.lang = lang\na1 = AI("Aria")\nprint(a1.lang)`, options:["Arabic","English","Error","None"], correct:1, hint:"Default used.", explain:"No language provided, so default 'English' is used."},
+  {cat:"Constructor", diff:1, q:"Constructor must be called manually.", options:["True","False"], correct:1, hint:"Automatic.", explain:"Python calls it automatically."},
+  {cat:"Constructor", diff:2, q:"Constructor is named ________.", options:["__init__","__del__","init","constructor"], correct:0, hint:"Double underscores.", explain:"It's __init__."},
+  {cat:"Constructor", diff:1, q:"When does constructor run?", options:["Class defined","Object created","Method called","Program ends"], correct:1, hint:"During creation.", explain:"Runs when object is created."},
+  {cat:"Constructor", diff:3, q:"How many parameters (excl. self)?", code:`class Student:\n    def __init__(self, name, grade, age):\n        self.name = name\n        self.grade = grade\n        self.age = age`, options:["2","3","4","1"], correct:1, hint:"Don't count self.", explain:"3 parameters: name, grade, age."},
+  {cat:"Constructor", diff:1, q:"You can have a class without __init__.", options:["True","False"], correct:0, hint:"Default exists.", explain:"Python uses a default constructor."},
+  {cat:"Constructor", diff:2, q:"What is printed?", code:`class Car:\n    def __init__(self, brand):\n        self.brand = brand\n        print("Car created")\nc1 = Car("Tesla")\nc2 = Car("BMW")`, options:["Car created","Car created twice","Nothing","Error"], correct:1, hint:"Two objects.", explain:"Two objects → printed twice."},
+  {cat:"Constructor", diff:2, q:"Can __init__ have default values?", options:["True","False"], correct:0, hint:"Yes.", explain:"Yes, like any function."},
+  {cat:"Constructor", diff:1, q:"Constructor sets up object ________ after creation.", options:["immediately","later","never","eventually"], correct:0, hint:"Right away.", explain:"Runs immediately."},
+  {cat:"Constructor", diff:3, q:"What will print?", code:`class A:\n    def __init__(self, x=5):\n        self.x = x\na1 = A()\na2 = A(10)\nprint(a1.x, a2.x)`, options:["5 10","10 5","5 5","10 10"], correct:0, hint:"Default then provided.", explain:"a1 uses default 5, a2 uses 10."},
+  {cat:"Constructor", diff:1, q:"Main purpose of __init__?", options:["Delete","Initialize attributes","Print","Create class"], correct:1, hint:"Set up.", explain:"Initialize object attributes."},
+  {cat:"Constructor", diff:2, q:"__init__ returns the object.", options:["True","False"], correct:1, hint:"Returns None.", explain:"__init__ should not return anything."},
+  {cat:"Constructor", diff:2, q:"Constructor's full name is ________.", options:["__init__","init","constructor","__new__"], correct:0, hint:"Double underscores.", explain:"__init__."},
+  {cat:"Constructor", diff:3, q:"Output?", code:`class A:\n    def __init__(self):\n        print("Hi")\na1 = A()\na2 = A()`, options:["Hi","Hi Hi","Nothing","Error"], correct:1, hint:"Two objects.", explain:"Two objects → printed twice."},
+  {cat:"Constructor", diff:1, q:"How many times does __init__ run per object?", options:["0","1","2","Always"], correct:1, hint:"Once.", explain:"Once per object."},
+  {cat:"Constructor", diff:2, q:"Can __init__ take *args?", options:["Yes","No","Only in Python 3","Only if defined"], correct:0, hint:"Yes.", explain:"Yes, like any function."},
+  {cat:"Constructor", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, *args):\n        self.args = args\na = A(1, 2, 3)\nprint(len(a.args))`, options:["0","1","2","3"], correct:3, hint:"Count args.", explain:"3 args → len = 3."},
+  {cat:"Constructor", diff:1, q:"Does __init__ create the object?", options:["Yes","No (that's __new__)","Only in Python 3","Only if defined"], correct:1, hint:"__new__ creates.", explain:"__new__ creates the object, __init__ initializes it."},
+  {cat:"Constructor", diff:2, q:"Can you have multiple constructors?", options:["No","Yes, with default args","Only in Python 3","Only with import"], correct:1, hint:"Use defaults.", explain:"Python doesn't support overloading, but you can use default args."},
+  {cat:"Constructor", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self, name="World"):\n        self.name = name\n    def greet(self):\n        return f"Hi {self.name}"\na = A()\nprint(a.greet())`, options:["Hi","Hi World","Hi None","Error"], correct:1, hint:"Default name.", explain:"No name provided → 'World'."},
+  {cat:"Constructor", diff:2, q:"Can __init__ call other methods?", options:["Yes","No","Only in Python 3","Only if defined"], correct:0, hint:"Yes.", explain:"Use self.method() in __init__."},
+  {cat:"Constructor", diff:1, q:"Is __init__ optional?", options:["Yes","No","Only in Python 3","Always required"], correct:0, hint:"Optional.", explain:"If not defined, Python uses a default one."},
+  {cat:"Constructor", diff:2, q:"What happens if __init__ raises an error?", options:["Object still created","Object not created","Error ignored","Retry"], correct:1, hint:"Creation fails.", explain:"If __init__ raises, object creation fails."},
+  {cat:"Constructor", diff:3, q:"What is the output?", code:`class A:\n    def __init__(self):\n        self.x = 5\n        self.y = 10\na = A()\nprint(a.x + a.y)`, options:["5","10","15","Error"], correct:2, hint:"5 + 10.", explain:"5 + 10 = 15."},
+  {cat:"Constructor", diff:1, q:"What is the first parameter of __init__?", options:["self","cls","obj","this"], correct:0, hint:"Current object.", explain:"self is the first parameter."},
+  {cat:"Constructor", diff:2, q:"What does __init__ usually do?", options:["Set initial attributes","Delete object","Print object","Create class"], correct:0, hint:"Initialize.", explain:"Set initial state of the object."},
+
+  // DEBUGGING (30)
+  {cat:"Debugging", diff:2, q:"Find the mistake:", code:`class Student:\n    def init(name, student_id):\n        self.name = name`, options:["init should be __init__","name wrong","student_id wrong","No mistake"], correct:0, hint:"Underscores.", explain:"Should be __init__ with double underscores, and needs self."},
+  {cat:"Debugging", diff:2, q:"What's missing?", code:`class Dog:\n    def speak():\n        print("Woof")\nd = Dog()\nd.speak()`, options:["self parameter","print","return","class"], correct:0, hint:"Every method needs it.", explain:"Missing self parameter."},
+  {cat:"Debugging", diff:3, q:"Bug here?", code:`class Student:\n    def __init__(self, name):\n        self.name = name\n    def show_info(self):\n        print("Name:", name)`, options:["name should be self.name","Missing constructor","Wrong class","No bug"], correct:0, hint:"Access attribute.", explain:"Should be self.name inside method."},
+  {cat:"Debugging", diff:1, q:"Methods can be defined without self.", options:["True","False"], correct:1, hint:"Required.", explain:"False. self is required."},
+  {cat:"Debugging", diff:2, q:"Find missing part:", code:`class SmartDevice:\n    is_on = False\n    def turn_on(self):\n        is_on = True`, options:["self.is_on = True","is_on = true","self.is_on == True","No mistake"], correct:0, hint:"Use self.", explain:"Use self.is_on = True."},
+  {cat:"Debugging", diff:3, q:"What will print?", code:`class Student:\n    schoolName = "WE School"\n    def __init__(self, name):\n        self.name = name\ns1 = Student("Sara")\ns2 = Student("Ahmed")\nprint(s1.name, s2.name, s1.schoolName)`, options:["Sara Ahmed WE School","Ahmed Sara WE School","Sara Sara WE School","Ahmed Ahmed WE School"], correct:0, hint:"Own names.", explain:"Each has own name, share schoolName."},
+  {cat:"Debugging", diff:1, q:"Which is NOT OOP?", options:["Encapsulation","Inheritance","Compilation","Polymorphism"], correct:2, hint:"Building code.", explain:"Compilation is not OOP."},
+  {cat:"Debugging", diff:3, q:"Output?", code:`class Counter:\n    def __init__(self):\n        self.count = 0\n    def increment(self):\n        self.count += 1\n        return self.count\nc = Counter()\nprint(c.increment())\nprint(c.increment())`, options:["1 then 2","0 then 1","2 then 3","1 then 1"], correct:0, hint:"Starts at 0.", explain:"First call → 1, second → 2."},
+  {cat:"Debugging", diff:1, q:"A class can have both class and instance attrs.", options:["True","False"], correct:0, hint:"Yes.", explain:"Yes, both are allowed."},
+  {cat:"Debugging", diff:3, q:"Find error:", code:`class Patient:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\np1 = Patient("Ali")\nprint(p1.age)`, options:["Missing age argument","Missing name","Wrong class","No error"], correct:0, hint:"Arguments.", explain:"Missing age argument."},
+  {cat:"Debugging", diff:2, q:"Find mistake:", code:`class Cat:\n    def init(self):\n        pass`, options:["init should be __init__","No self","Cat should be cat","No mistake"], correct:0, hint:"Underscores.", explain:"Should be __init__ with self."},
+  {cat:"Debugging", diff:2, q:"What's missing?", code:`class A:\n    def speak():\n        print("Hi")`, options:["self","print","return","class"], correct:0, hint:"First param.", explain:"Missing self."},
+  {cat:"Debugging", diff:3, q:"Bug?", code:`class A:\n    def __init__(self, x):\n        self.x = x\n    def show(self):\n        print(x)`, options:["x should be self.x","Missing constructor","Wrong class","No bug"], correct:0, hint:"Access attr.", explain:"Should be self.x."},
+  {cat:"Debugging", diff:1, q:"You can call a method without self if inside class.", options:["True","False"], correct:1, hint:"self always needed.", explain:"False. self is always needed."},
+  {cat:"Debugging", diff:2, q:"Find missing:", code:`class A:\n    x = 5\n    def set_x(self, val):\n        x = val`, options:["self.x = val","self.x == val","x == val","No mistake"], correct:0, hint:"Use self.", explain:"Should be self.x = val."},
+  {cat:"Debugging", diff:3, q:"What prints?", code:`class Student:\n    school = "AI"\n    def __init__(self, n):\n        self.n = n\na = Student("Sara")\nb = Student("Ali")\nprint(a.n, b.n, a.school)`, options:["Sara Ali AI","Ali Sara AI","Sara Sara AI","Ali Ali AI"], correct:0, hint:"Own names.", explain:"Each has own name."},
+  {cat:"Debugging", diff:1, q:"Which is NOT OOP?", options:["Class","Object","Array","Method"], correct:2, hint:"Data structure.", explain:"Array is a data structure, not OOP."},
+  {cat:"Debugging", diff:3, q:"Output?", code:`class Counter:\n    def __init__(self):\n        self.c = 0\n    def inc(self):\n        self.c += 1\n        return self.c\nx = Counter()\nprint(x.inc())\nprint(x.inc())`, options:["1 then 2","0 then 1","2 then 3","1 then 1"], correct:0, hint:"Starts at 0.", explain:"1 then 2."},
+  {cat:"Debugging", diff:1, q:"Constructor can set multiple attrs.", options:["True","False"], correct:0, hint:"Yes.", explain:"Yes, any number."},
+  {cat:"Debugging", diff:3, q:"Error?", code:`class A:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\na = A(5)\nprint(a.y)`, options:["Missing y argument","Missing x","Wrong class","No error"], correct:0, hint:"2 args needed.", explain:"Missing y argument."},
+  {cat:"Debugging", diff:2, q:"Find bug:", code:`class A:\n    def __init__(self):\n        self.x = 5\n    def get_x(self):\n        return x`, options:["return self.x","return X","No bug","Missing ()"], correct:0, hint:"Use self.", explain:"Should be return self.x."},
+  {cat:"Debugging", diff:3, q:"What's wrong?", code:`class A:\n    def __init__(self, v):\n        self.v = v\n    def get(self):\n        return v`, options:["return self.v","No self","Wrong class","No bug"], correct:0, hint:"Access attr.", explain:"Should be self.v."},
+  {cat:"Debugging", diff:1, q:"Can a method have no self?", options:["Yes","No","Only static","Only class methods"], correct:1, hint:"Instance methods need self.", explain:"Instance methods need self."},
+  {cat:"Debugging", diff:2, q:"Bug?", code:`class A:\n    def __init__(self):\n        self.x = 0\n    def inc(self):\n        x += 1`, options:["self.x += 1","x = 1","No bug","Missing ()"], correct:0, hint:"Use self.", explain:"Should be self.x += 1."},
+  {cat:"Debugging", diff:3, q:"What's missing?", code:`class A:\n    def __init__(self)\n        self.x = 5`, options:[": after __init__","self","x","No mistake"], correct:0, hint:"Punctuation.", explain:"Missing colon after __init__(self)."},
+  {cat:"Debugging", diff:2, q:"Find bug:", code:`class A:\n    def __init__(self, name):\n        name = name`, options:["self.name = name","No self","Wrong class","No bug"], correct:0, hint:"Use self.", explain:"Should be self.name = name."},
+  {cat:"Debugging", diff:3, q:"Output?", code:`class A:\n    def __init__(self, x):\n        self.x = x\na = A(5)\nb = a\nb.x = 10\nprint(a.x)`, options:["5","10","Error","None"], correct:1, hint:"Same object.", explain:"a and b refer to same object, so both see 10."},
+  {cat:"Debugging", diff:1, q:"Can you have empty class?", options:["Yes, with pass","No","Only in Python 3","Only with init"], correct:0, hint:"Use pass.", explain:"Yes, use pass as placeholder."},
+  {cat:"Debugging", diff:2, q:"Bug?", code:`class A:\n    def __init__(self):\n        self.items = []\n    def add(self, x):\n        items.append(x)`, options:["self.items.append(x)","No self","Wrong class","No bug"], correct:0, hint:"Use self.", explain:"Should be self.items.append(x)."},
+  {cat:"Debugging", diff:3, q:"Find bug:", code:`class A:\n    def __init__(self):\n        self.x = 5\n    def show(self):\n        print(self.x)\na = A\nprint(a.x)`, options:["a = A() missing ()","Missing self","Wrong class","No bug"], correct:0, hint:"Call class.", explain:"Should be a = A() with parentheses."},
+  {cat:"Debugging", diff:2, q:"What's wrong?", code:`class A:\n    def __init__(self):\n        self.x = 5\n    def get(self):\n        return self.X`, options:["X should be x","No self","Wrong class","No bug"], correct:0, hint:"Case sensitive.", explain:"Python is case sensitive. X ≠ x."},
+  {cat:"Debugging", diff:3, q:"Bug?", code:`class A:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n    def sum(self):\n        return x + y`, options:["self.x + self.y","No self","Wrong class","No bug"], correct:0, hint:"Use self.", explain:"Should be return self.x + self.y."}
+];
+
+// ==================== STATION TYPES ====================
+const STATION_TYPES = [
+  {icon:'🏠', name:'House', color:'#4f7cff'},
+  {icon:'🏰', name:'Castle', color:'#9d4edd'},
+  {icon:'🕳️', name:'Cave', color:'#f59e0b'},
+  {icon:'🗼', name:'Tower', color:'#22c55e'},
+  {icon:'⛩️', name:'Temple', color:'#ef4444'},
+  {icon:'🏛️', name:'Academy', color:'#06b6d4'},
+  {icon:'🏯', name:'Fortress', color:'#f97316'},
+  {icon:'⛺', name:'Camp', color:'#84cc16'},
+  {icon:'🏕️', name:'Outpost', color:'#8b5cf6'},
+  {icon:'🗻', name:'Peak', color:'#64748b'}
+];
+
+const CATEGORIES = ['Class & Object','Attributes','Methods','self','Constructor','Debugging'];
+
+// ==================== STATE ====================
+let player = null;
+let stationList = [];
+let currentStation = null;
+let currentQuestions = [];
+let currentQIndex = 0;
+let timerInt = null;
+let timeLeft = 0;
+let answered = false;
+
+const AVATARS = ['🐉','🦁','🐺','🦅','🐯','🦊','🐻','🦈','🐍','🦂','🐆','🦍','🐘','🦏','🐊','🦖','🐙','🦑','🦀','🐢','🐬'];
+let selectedAvatar = AVATARS[0];
+
+// ==================== LOGIN ====================
+function renderAvatars() {
+  document.getElementById('avatarGrid').innerHTML = AVATARS.map(a => 
+    `<div class="avatar-item" onclick="selectAvatar('${a}')">${a}</div>`
+  ).join('');
+}
+
+function selectAvatar(a) {
+  selectedAvatar = a;
+  document.querySelectorAll('.avatar-item').forEach(el => {
+    el.classList.toggle('selected', el.textContent === a);
+  });
+}
+
+renderAvatars();
+document.querySelector('.avatar-item').classList.add('selected');
+
+// ==================== GAME START ====================
+function startGame() {
+  const name = document.getElementById('playerName').value.trim();
+  const team = document.getElementById('playerTeam').value.trim() || 'No Team';
+  if (!name) return alert('Please enter your name!');
+  
+  const id = 'p_' + name.replace(/\s/g,'_');
+  const existing = JSON.parse(localStorage.getItem('oop_players') || '{}');
+  
+  if (existing[id]) {
+    player = existing[id];
+    player.avatar = selectedAvatar;
+    player.team = team;
+  } else {
+    player = {
+      id, name, avatar: selectedAvatar, team,
+      score: 0, correct: 0, wrong: 0,
+      stationsDone: [], answeredQ: [], badges: [],
+      createdAt: Date.now()
+    };
+  }
+  
+  generateStations();
+  
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+  
+  updateUI();
+  renderMap();
+  renderLeaderboards();
+  savePlayer();
+}
+
+// ==================== STATIONS ====================
+function generateStations() {
+  const stored = localStorage.getItem('stations_' + player.id);
+  if (stored) {
+    stationList = JSON.parse(stored);
+    stationList.forEach(s => {
+      s.done = player.stationsDone.includes(s.id);
+    });
+    return;
+  }
+  
+  stationList = [];
+  for (let i = 0; i < 50; i++) {
+    const type = STATION_TYPES[i % STATION_TYPES.length];
+    const cat = CATEGORIES[i % CATEGORIES.length];
+    stationList.push({
+      id: i,
+      icon: type.icon,
+      name: type.name + ' #' + (i + 1),
+      cat: cat,
+      color: type.color,
+      done: false
+    });
+  }
+  
+  stationList.sort(() => Math.random() - 0.5);
+  stationList.forEach((s, i) => s.id = i);
+  
+  localStorage.setItem('stations_' + player.id, JSON.stringify(stationList));
+}
+
+// ==================== RENDER MAP ====================
+function renderMap() {
+  const mapEl = document.getElementById('map');
+  const nextStation = stationList.find(s => !s.done);
+  
+  mapEl.innerHTML = stationList.map(s => {
+    const isNext = nextStation && nextStation.id === s.id;
+    return `
+      <div class="station-card ${s.done ? 'done' : ''} ${isNext ? 'next' : ''}" 
+           onclick="openStation(${s.id})"
+           style="border-color: ${s.done ? '#22c55e' : (isNext ? '#f9c74f' : s.color)}">
+        ${s.done ? '<div class="checkmark">✓</div>' : '<div class="qcount">5 Qs</div>'}
+        <div class="icon">${s.icon}</div>
+        <div class="cat" style="color: ${s.done ? '#22c55e' : s.color}">${s.cat}</div>
+        <div class="name">${s.name}</div>
+      </div>
+    `;
+  }).join('');
+  
+  const done = stationList.filter(s => s.done).length;
+  document.getElementById('mapInfo').textContent = `${done}/50 completed • Click any station`;
+}
+
+// ==================== STATION ENTRY ====================
+function openStation(stationId) {
+  const station = stationList.find(s => s.id === stationId);
+  if (!station) return;
+  
+  currentStation = station;
+  const isTraining = station.done;
+  
+  const categoryQ = QUESTION_BANK.filter(q => q.cat === station.cat);
+  let availableQ = categoryQ.filter(q => !player.answeredQ.includes(q.q));
+  
+  if (availableQ.length < 5) {
+    availableQ = categoryQ;
+  }
+  
+  const shuffled = [...availableQ].sort(() => Math.random() - 0.5);
+  currentQuestions = shuffled.slice(0, 5).map(q => ({
+    ...q,
+    isTraining: isTraining || player.answeredQ.includes(q.q)
+  }));
+  currentQIndex = 0;
+  
+  document.getElementById('modalTitle').textContent = `${station.icon} ${station.name}`;
+  showCurrentQuestion();
+  document.getElementById('questionModal').classList.add('active');
+}
+
+// ==================== SHOW QUESTION ====================
+function showCurrentQuestion() {
+  const q = currentQuestions[currentQIndex];
+  answered = false;
+  
+  document.getElementById('qProgress').textContent = `${currentQIndex + 1}/5`;
+  document.getElementById('qCategory').textContent = currentStation.cat;
+  document.getElementById('qText').textContent = q.q;
+  
+  const codeEl = document.getElementById('qCodeContainer');
+  if (q.code) {
+    codeEl.innerHTML = `<pre class="q-code">${q.code}</pre>`;
+  } else {
+    codeEl.innerHTML = '';
+  }
+  
+  const letters = ['A','B','C','D'];
+  const optionsHtml = q.options.map((opt, i) => 
+    `<button type="button" class="option-btn" onclick="checkAnswer(${i})">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`
+  ).join('');
+  document.getElementById('optionsContainer').innerHTML = optionsHtml;
+  
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.style.display = 'none';
+  fb.innerHTML = '';
+  
+  startTimer(60);
+}
+
+// ==================== TIMER ====================
+function startTimer(seconds) {
+  if (timerInt) clearInterval(timerInt);
+  timeLeft = seconds;
+  const total = seconds;
+  
+  document.getElementById('timerNum').textContent = timeLeft;
+  document.getElementById('timerNum').classList.remove('warning');
+  document.getElementById('timerFill').style.width = '100%';
+  
+  timerInt = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timerNum').textContent = timeLeft;
+    document.getElementById('timerFill').style.width = ((timeLeft / total) * 100) + '%';
+    if (timeLeft <= 10) document.getElementById('timerNum').classList.add('warning');
+    if (timeLeft <= 0) {
+      clearInterval(timerInt);
+      if (!answered) timeUp();
+    }
+  }, 1000);
+}
+
+function timeUp() {
+  if (answered) return;
+  answered = true;
+  if (timerInt) clearInterval(timerInt);
+  
+  const q = currentQuestions[currentQIndex];
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+  });
+  
+  if (!q.isTraining) {
+    player.wrong++;
+    savePlayer();
+  }
+  
+  displayFeedback(false, '⏰ Time is up!');
+  updateUI();
+}
+
+// ==================== CHECK ANSWER ====================
+function checkAnswer(selected) {
+  if (answered) return;
+  answered = true;
+  if (timerInt) clearInterval(timerInt);
+  
+  const q = currentQuestions[currentQIndex];
+  const isCorrect = selected === q.correct;
+  
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+    else if (i === selected && !isCorrect) btn.classList.add('wrong');
+  });
+  
+  let points = 0;
+  
+  if (isCorrect) {
+    if (!q.isTraining) {
+      points = q.diff * 10;
+      if (timeLeft > 30) points += 5;
+      player.score += points;
+      player.correct++;
+      if (!player.answeredQ.includes(q.q)) {
+        player.answeredQ.push(q.q);
+      }
+      checkBadges();
+      savePlayer();
+    }
+    displayFeedback(true, `🎉 Correct! ${points > 0 ? '+' + points + ' points' : '(Practice mode)'}`);
+  } else {
+    if (!q.isTraining) {
+      player.wrong++;
+      savePlayer();
+    }
+    displayFeedback(false, '❌ Wrong!');
+  }
+  
+  updateUI();
+  renderLeaderboards();
+}
+
+// ==================== DISPLAY FEEDBACK ====================
+function displayFeedback(isCorrect, msg) {
+  const q = currentQuestions[currentQIndex];
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+  
+  let html = `<div class="title">${msg}</div>`;
+  
+  if (isCorrect) {
+    html += `
+      <div class="explain-box">
+        <b>📘 Explanation:</b>
+        ${q.explain}
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="explain-box">
+        <b>💡 Hint:</b>
+        ${q.hint}
+      </div>
+      <div class="explain-box">
+        <b>✅ Correct Answer:</b>
+        ${q.options[q.correct]}
+      </div>
+    `;
+  }
+  
+  const isLast = currentQIndex >= currentQuestions.length - 1;
+  const btnText = isLast ? '✅ Finish Station' : '➡️ Next Question';
+  
+  html += `<button type="button" class="next-btn" onclick="goToNextQuestion()">${btnText}</button>`;
+  
+  fb.innerHTML = html;
+  fb.style.display = 'block';
+}
+
+// ==================== NEXT QUESTION ====================
+function goToNextQuestion() {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.style.display = 'none';
+  fb.innerHTML = '';
+  
+  if (currentQIndex >= currentQuestions.length - 1) {
+    if (!currentStation.done) {
+      currentStation.done = true;
+      if (!player.stationsDone.includes(currentStation.id)) {
+        player.stationsDone.push(currentStation.id);
+      }
+      localStorage.setItem('stations_' + player.id, JSON.stringify(stationList));
+      savePlayer();
+      showToast(`🎉 Station completed: ${currentStation.name}`);
+    }
+    closeQuestion();
+    return;
+  }
+  
+  currentQIndex++;
+  showCurrentQuestion();
+}
+
+// ==================== CLOSE ====================
+function closeQuestion() {
+  if (timerInt) clearInterval(timerInt);
+  document.getElementById('questionModal').classList.remove('active');
+  renderMap();
+  updateUI();
+}
+
+// ==================== BADGES ====================
+const BADGES = {
+  firstCorrect:   {icon:'🥇', name:'First Correct'},
+  tenCorrect:     {icon:'🎯', name:'10 Correct'},
+  fiftyCorrect:   {icon:'💎', name:'50 Correct'},
+  hundredCorrect: {icon:'👑', name:'100 Correct'},
+  score500:       {icon:'⭐', name:'500 Points'},
+  score1000:      {icon:'🌟', name:'1000 Points'},
+  stations10:     {icon:'🗺️', name:'10 Stations'},
+  stations25:     {icon:'🏔️', name:'25 Stations'},
+  stations50:     {icon:'🏆', name:'All Stations!'}
+};
+
+function checkBadges() {
+  const checks = {
+    firstCorrect:   () => player.correct >= 1,
+    tenCorrect:     () => player.correct >= 10,
+    fiftyCorrect:   () => player.correct >= 50,
+    hundredCorrect: () => player.correct >= 100,
+    score500:       () => player.score >= 500,
+    score1000:      () => player.score >= 1000,
+    stations10:     () => player.stationsDone.length >= 10,
+    stations25:     () => player.stationsDone.length >= 25,
+    stations50:     () => player.stationsDone.length >= 50
+  };
+  
+  Object.entries(checks).forEach(([key, check]) => {
+    if (!player.badges.includes(key) && check()) {
+      player.badges.push(key);
+      showToast(`🏅 Badge: ${BADGES[key].name}!`);
+    }
+  });
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ==================== UI ====================
+function updateUI() {
+  document.getElementById('myAvatar').textContent = player.avatar;
+  document.getElementById('myName').textContent = player.name;
+  document.getElementById('statScore').textContent = player.score;
+  document.getElementById('statCorrect').textContent = player.correct;
+  document.getElementById('statWrong').textContent = player.wrong;
+  document.getElementById('statStations').textContent = player.stationsDone.length;
+  
+  const badgeEl = document.getElementById('myBadges');
+  if (player.badges.length === 0) {
+    badgeEl.innerHTML = '<span style="color:#8b9dc3;font-size:.8em">No badges yet</span>';
+  } else {
+    badgeEl.innerHTML = player.badges.map(b => 
+      `<span class="badge">${BADGES[b].icon} ${BADGES[b].name}</span>`
+    ).join('');
+  }
+}
+
+function savePlayer() {
+  const players = JSON.parse(localStorage.getItem('oop_players') || '{}');
+  players[player.id] = player;
+  localStorage.setItem('oop_players', JSON.stringify(players));
+}
+
+// ==================== LEADERBOARDS ====================
+function renderLeaderboards() {
+  const players = Object.values(JSON.parse(localStorage.getItem('oop_players') || '{}'));
+  
+  const byScore = [...players].sort((a,b) => b.score - a.score).slice(0, 5);
+  document.getElementById('lbScore').innerHTML = byScore.length === 0 
+    ? '<li style="color:#8b9dc3">No data</li>' 
+    : byScore.map((p, i) => `<li><span><span class="rank">${i+1}.</span> ${p.avatar} ${p.name}</span><b style="color:#4f7cff">${p.score}</b></li>`).join('');
+  
+  const byCorrect = [...players].sort((a,b) => b.correct - a.correct).slice(0, 5);
+  document.getElementById('lbCorrect').innerHTML = byCorrect.length === 0 
+    ? '<li style="color:#8b9dc3">No data</li>' 
+    : byCorrect.map((p, i) => `<li><span><span class="rank">${i+1}.</span> ${p.avatar} ${p.name}</span><b style="color:#4f7cff">${p.correct}</b></li>`).join('');
+}
+
+function showLeaderboard() {
+  const players = Object.values(JSON.parse(localStorage.getItem('oop_players') || '{}'));
+  const byScore = [...players].sort((a,b) => b.score - a.score);
+  const byCorrect = [...players].sort((a,b) => b.correct - a.correct);
+  
+  document.getElementById('lbContent').innerHTML = `
+    <h3 style="color:#4f7cff;margin:15px 0;font-size:1em">🏆 Top Score</h3>
+    <table class="students-table">
+      <thead><tr><th>#</th><th>Avatar</th><th>Name</th><th>Team</th><th>Points</th></tr></thead>
+      <tbody>${byScore.map((p,i) => `<tr><td>${i+1}</td><td style="font-size:1.3em">${p.avatar}</td><td>${p.name}</td><td>${p.team}</td><td><b style="color:#4f7cff">${p.score}</b></td></tr>`).join('')}</tbody>
+    </table>
+    <h3 style="color:#4f7cff;margin:25px 0 15px;font-size:1em">🎯 Most Correct</h3>
+    <table class="students-table">
+      <thead><tr><th>#</th><th>Avatar</th><th>Name</th><th>Correct</th><th>Wrong</th></tr></thead>
+      <tbody>${byCorrect.map((p,i) => `<tr><td>${i+1}</td><td style="font-size:1.3em">${p.avatar}</td><td>${p.name}</td><td><b style="color:#22c55e">${p.correct}</b></td><td style="color:#ef4444">${p.wrong}</td></tr>`).join('')}</tbody>
+    </table>
+  `;
+  document.getElementById('lbModal').classList.add('active');
+}
+
+// ==================== TEACHER PASSWORD ====================
+function askTeacherPassword() {
+  document.getElementById('passwordModal').classList.add('active');
+  document.getElementById('teacherPassword').value = '';
+  document.getElementById('pwError').textContent = '';
+  setTimeout(() => document.getElementById('teacherPassword').focus(), 100);
+}
+
+function closePasswordModal() {
+  document.getElementById('passwordModal').classList.remove('active');
+}
+
+function checkTeacherPassword() {
+  const pw = document.getElementById('teacherPassword').value;
+  if (pw === '199019') {
+    closePasswordModal();
+    showTeacherPanel();
+  } else {
+    document.getElementById('pwError').textContent = '❌ Wrong password. Try again.';
+    document.getElementById('teacherPassword').value = '';
+  }
+}
+
+// ==================== TEACHER ====================
+function showTeacherPanel() {
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('teacherScreen').classList.add('active');
+  refreshTeacher();
+}
+
+function backToLogin() {
+  document.getElementById('teacherScreen').classList.remove('active');
+  document.getElementById('loginScreen').classList.add('active');
+}
+
+function refreshTeacher() {
+  const players = Object.values(JSON.parse(localStorage.getItem('oop_players') || '{}'));
+  const sorted = players.sort((a,b) => b.score - a.score);
+  
+  document.getElementById('studentsTableBody').innerHTML = sorted.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td style="font-size:1.4em">${p.avatar}</td>
+      <td>${p.name}</td>
+      <td>${p.team}</td>
+      <td><b style="color:#4f7cff">${p.score}</b></td>
+      <td style="color:#22c55e">${p.correct}</td>
+      <td style="color:#ef4444">${p.wrong}</td>
+      <td>${p.stationsDone.length}</td>
+      <td>${p.badges.length}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#8b9dc3">No students yet</td></tr>';
+}
+
+function exportData() {
+  const players = Object.values(JSON.parse(localStorage.getItem('oop_players') || '{}'));
+  let csv = 'Name,Team,Points,Correct,Wrong,Stations,Badges\n';
+  players.forEach(p => {
+    csv += `${p.name},${p.team},${p.score},${p.correct},${p.wrong},${p.stationsDone.length},${p.badges.length}\n`;
+  });
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'oop_students.csv';
+  a.click();
+}
+
+function resetAll() {
+  if (!confirm('⚠️ Delete ALL student data?')) return;
+  if (!confirm('⚠️ Final confirmation: DELETE EVERYTHING?')) return;
+  localStorage.removeItem('oop_players');
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith('stations_') || k.startsWith('pos_')) localStorage.removeItem(k);
+  });
+  refreshTeacher();
+  alert('✅ All data cleared');
+}
+
+function logout() {
+  if (!confirm('Logout? Your progress is saved.')) return;
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('loginScreen').classList.add('active');
+  player = null;
+}
+</script>
+</body>
+</html>
