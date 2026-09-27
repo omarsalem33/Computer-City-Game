@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 Alex's Software Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Tahoma', sans-serif; }
+
+:root {
+  --bg-main: #F0F4FF;
+  --bg-card: #FFFFFF;
+  --text-dark: #2D3748;
+  --text-light: #718096;
+  --alex: #4A90D9;
+  --sofia: #9B59B6;
+  --os: #2C3E50;
+  --mia: #E91E63;
+  --utility: #FF9800;
+  --final: #FFD700;
+  --correct: #27AE60;
+  --wrong: #E74C3C;
+  --score: #F39C12;
+  --shadow: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(74,144,217,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(155,89,182,0.08) 0%, transparent 50%);
+}
+
+.floating-emoji {
+  position: fixed;
+  font-size: 2rem;
+  opacity: 0.15;
+  pointer-events: none;
+  animation: floatUp 15s linear infinite;
+  z-index: 0;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+.screen {
+  display: none;
+  width: 100%;
+  max-width: 900px;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.5s ease;
+}
+
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+#splashScreen .logo {
+  font-size: 5rem;
+  margin-bottom: 16px;
+  animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+#splashScreen h1 {
+  font-size: 2.2rem;
+  color: var(--alex);
+  margin-bottom: 8px;
+  font-weight: 800;
+}
+
+#splashScreen p {
+  color: var(--text-light);
+  margin-bottom: 32px;
+  font-size: 1.1rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 16px;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 8px;
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: linear-gradient(135deg, #4A90D9, #357ABD); color: white; }
+.btn-success { background: linear-gradient(135deg, #27AE60, #1E8449); color: white; }
+.btn-danger { background: linear-gradient(135deg, #E74C3C, #C0392B); color: white; }
+.btn-ghost { background: transparent; color: var(--text-dark); border: 2px solid #E2E8F0; }
+
+.input-group { margin: 20px 0; }
+.input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark); text-align: left; }
+.input-group input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #E2E8F0;
+  border-radius: 16px;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+  background: #F8FAFC;
+}
+.input-group input:focus {
+  outline: none;
+  border-color: var(--alex);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(74,144,217,0.1);
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hud-item { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; }
+.hearts { color: var(--wrong); font-size: 1.3rem; letter-spacing: 2px; }
+.score-display { color: var(--score); }
+.timer-display { color: var(--alex); font-variant-numeric: tabular-nums; }
+
+.progress-container {
+  background: #E2E8F0;
+  border-radius: 12px;
+  height: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4A90D9, #9B59B6);
+  border-radius: 12px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.map-title { text-align: center; margin-bottom: 24px; color: var(--text-dark); font-size: 1.5rem; }
+.map-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px; }
+
+.station {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+  border: 3px solid transparent;
+  position: relative;
+}
+
+.station:hover:not(.locked) { transform: translateY(-5px) scale(1.03); box-shadow: var(--shadow-lg); }
+.station.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.7); }
+.station.completed { border-color: var(--correct); }
+.station.completed::after { content: '✅'; position: absolute; top: 8px; right: 8px; font-size: 1.3rem; }
+.station-emoji { font-size: 2.5rem; margin-bottom: 8px; display: block; }
+.station-name { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
+.station-desc { font-size: 0.8rem; color: var(--text-light); margin-top: 4px; }
+.station.locked::before { content: '🔒'; position: absolute; top: 8px; right: 8px; font-size: 1.2rem; }
+
+.character-area { text-align: center; margin-bottom: 20px; }
+.character-emoji { font-size: 4rem; display: inline-block; animation: characterIdle 3s ease-in-out infinite; }
+
+@keyframes characterIdle {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.character-emoji.happy { animation: characterHappy 0.6s ease; }
+@keyframes characterHappy {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3) rotate(10deg); }
+}
+
+.character-emoji.sad { animation: characterSad 0.6s ease; }
+@keyframes characterSad {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px) rotate(-5deg); }
+  75% { transform: translateX(10px) rotate(5deg); }
+}
+
+.character-name { font-size: 1.2rem; font-weight: 700; color: var(--text-dark); margin-top: 8px; }
+
+.question-box {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.question-text { font-size: 1.2rem; font-weight: 600; color: var(--text-dark); line-height: 1.6; margin-bottom: 8px; }
+
+.options-container { display: grid; gap: 12px; margin-bottom: 16px; }
+
+.option {
+  background: var(--bg-card);
+  border: 3px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 18px 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option:hover:not(.disabled) { border-color: var(--alex); background: #F0F7FF; transform: translateX(5px); }
+.option.disabled { cursor: not-allowed; pointer-events: none; }
+.option.correct { border-color: var(--correct); background: #E8F8F0; animation: pulse 0.5s ease; }
+.option.wrong { border-color: var(--wrong); background: #FDECEA; animation: shake 0.5s ease; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.option-letter {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.option.correct .option-letter { background: var(--correct); color: white; }
+.option.wrong .option-letter { background: var(--wrong); color: white; }
+
+.feedback {
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  display: none;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feedback.show { display: block; }
+.feedback.correct { background: #E8F8F0; border-left: 6px solid var(--correct); }
+.feedback.wrong { background: #FDECEA; border-left: 6px solid var(--wrong); }
+.feedback-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+.feedback.correct .feedback-title { color: var(--correct); }
+.feedback.wrong .feedback-title { color: var(--wrong); }
+.feedback-text { color: var(--text-dark); line-height: 1.6; font-size: 1rem; }
+
+.dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-card); border-radius: 16px; padding: 20px; text-align: center; box-shadow: var(--shadow); }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--alex); }
+.stat-label { font-size: 0.85rem; color: var(--text-light); margin-top: 4px; }
+
+.students-table {
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border-collapse: collapse;
+}
+
+.students-table th {
+  background: #F8FAFC;
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.students-table td { padding: 14px 16px; border-bottom: 1px solid #F1F5F9; font-size: 0.95rem; }
+.students-table tr:hover { background: #F8FAFC; }
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: 800;
+  color: white;
+}
+
+.rank-1 { background: #FFD700; }
+.rank-2 { background: #C0C0C0; }
+.rank-3 { background: #CD7F32; }
+.rank-other { background: #CBD5E0; }
+
+.certificate {
+  background: linear-gradient(135deg, #FFF9E6, #FFF3D6);
+  border: 8px double var(--final);
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.certificate::before {
+  content: '🏆';
+  position: absolute;
+  font-size: 15rem;
+  opacity: 0.05;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.certificate h2 { font-size: 2rem; color: var(--score); margin-bottom: 8px; }
+
+.certificate .student-name {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--alex);
+  margin: 20px 0;
+  border-bottom: 4px dotted var(--alex);
+  display: inline-block;
+  padding: 0 20px 8px;
+}
+
+.certificate .cert-text { color: var(--text-dark); font-size: 1.1rem; line-height: 1.8; margin: 16px 0; }
+.certificate .cert-score { font-size: 1.5rem; font-weight: 800; color: var(--correct); margin: 16px 0; }
+.gameover-emoji { font-size: 5rem; margin-bottom: 16px; }
+
+@media (max-width: 600px) {
+  .card { padding: 24px 18px; }
+  #splashScreen h1 { font-size: 1.6rem; }
+  .character-emoji { font-size: 3rem; }
+  .question-text { font-size: 1.05rem; }
+  .option { padding: 14px 18px; font-size: 0.95rem; }
+  .hud { padding: 12px 16px; }
+  .hud-item { font-size: 0.95rem; }
+  .btn { padding: 14px 24px; font-size: 1rem; }
+  .certificate { padding: 24px 16px; }
+  .certificate .student-name { font-size: 1.8rem; }
+  .students-table th, .students-table td { padding: 10px 8px; font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="floating-emoji" style="left: 5%; animation-delay: 0s;">💻</div>
+<div class="floating-emoji" style="left: 15%; animation-delay: 2s;">⚙️</div>
+<div class="floating-emoji" style="left: 25%; animation-delay: 4s;">📱</div>
+<div class="floating-emoji" style="left: 35%; animation-delay: 6s;">🖥️</div>
+<div class="floating-emoji" style="left: 45%; animation-delay: 8s;">💾</div>
+<div class="floating-emoji" style="left: 55%; animation-delay: 10s;">🔧</div>
+<div class="floating-emoji" style="left: 65%; animation-delay: 12s;">🎨</div>
+<div class="floating-emoji" style="left: 75%; animation-delay: 14s;">🧠</div>
+<div class="floating-emoji" style="left: 85%; animation-delay: 1s;">👔</div>
+<div class="floating-emoji" style="left: 95%; animation-delay: 3s;">🏆</div>
+
+<div id="splashScreen" class="screen active">
+  <div class="card">
+    <div class="logo">🤖</div>
+    <h1>Alex's Software Adventure</h1>
+    <p>Join Alex on a journey to master Software!</p>
+    <div class="input-group">
+      <label for="studentName">👤 Your Name:</label>
+      <input type="text" id="studentName" placeholder="Enter your name..." maxlength="30">
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">🎮 Start Game</button>
+    <button class="btn btn-ghost" onclick="showTeacherLogin()">👨‍🏫 Teacher Login</button>
+  </div>
+</div>
+
+<div id="teacherLoginScreen" class="screen">
+  <div class="card">
+    <div class="logo">👨‍🏫</div>
+    <h1>Teacher Login</h1>
+    <p>Enter your password to continue</p>
+    <div class="input-group">
+      <label for="teacherPassword">🔐 Password:</label>
+      <input type="password" id="teacherPassword" placeholder="Enter password...">
+    </div>
+    <button class="btn btn-primary" onclick="teacherLogin()">🔓 Login</button>
+    <button class="btn btn-ghost" onclick="showScreen('splashScreen')">← Back</button>
+  </div>
+</div>
+
+<div id="mapScreen" class="screen">
+  <div class="card">
+    <h2 class="map-title">🗺️ Choose Your Station, <span id="mapStudentName"></span>!</h2>
+    <div class="progress-container">
+      <div class="progress-bar" id="mapProgress"></div>
+    </div>
+    <div class="map-container" id="mapContainer"></div>
+    <button class="btn btn-ghost" onclick="showScreen('splashScreen')">🏠 Home</button>
+  </div>
+</div>
+
+<div id="gameScreen" class="screen">
+  <div class="hud">
+    <div class="hud-item hearts" id="heartsDisplay">❤️❤️❤️❤️❤️</div>
+    <div class="hud-item score-display">⭐ <span id="scoreDisplay">0</span></div>
+    <div class="hud-item timer-display">⏱️ <span id="timerDisplay">30</span>s</div>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar" id="gameProgress"></div>
+  </div>
+  <div class="card">
+    <div class="character-area">
+      <div class="character-emoji" id="characterEmoji">🤖</div>
+      <div class="character-name" id="characterName">Alex</div>
+    </div>
+    <div class="question-box">
+      <div class="question-text" id="questionText">Loading...</div>
+    </div>
+    <div class="options-container" id="optionsContainer"></div>
+    <div class="feedback" id="feedbackBox">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="feedback-text" id="feedbackText"></div>
+    </div>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none;">Next →</button>
+  </div>
+</div>
+
+<div id="gameOverScreen" class="screen">
+  <div class="card">
+    <div class="gameover-emoji">😢</div>
+    <h1>Game Over!</h1>
+    <p>You ran out of hearts!</p>
+    <p style="font-size:1.3rem; margin: 16px 0;">Final Score: <strong id="gameOverScore">0</strong></p>
+    <button class="btn btn-primary" onclick="restartGame()">🔄 Try Again</button>
+    <button class="btn btn-ghost" onclick="showScreen('splashScreen')">🏠 Home</button>
+  </div>
+</div>
+
+<div id="victoryScreen" class="screen">
+  <div class="card">
+    <div class="gameover-emoji">🏆</div>
+    <h1>Congratulations!</h1>
+    <p>You completed all stations!</p>
+    <div class="certificate" id="certificate">
+      <h2>🎓 Certificate of Achievement 🎓</h2>
+      <p class="cert-text">This certifies that</p>
+      <div class="student-name" id="certStudentName">Student</div>
+      <p class="cert-text">has successfully completed</p>
+      <p style="font-size:1.3rem; font-weight:800; color:var(--alex);">Alex's Software Adventure</p>
+      <p class="cert-score">⭐ Score: <span id="certScore">0</span></p>
+      <p class="cert-text" style="font-size:0.9rem; color:var(--text-light);">Date: <span id="certDate"></span></p>
+    </div>
+    <button class="btn btn-success" onclick="downloadCertificate()">📥 Download Certificate</button>
+    <button class="btn btn-primary" onclick="restartGame()">🔄 Play Again</button>
+    <button class="btn btn-ghost" onclick="showScreen('splashScreen')">🏠 Home</button>
+  </div>
+</div>
+
+<div id="dashboardScreen" class="screen">
+  <div class="card">
+    <div class="dashboard-header">
+      <h1>👨‍🏫 Teacher Dashboard</h1>
+      <button class="btn btn-ghost" onclick="showScreen('splashScreen')">🚪 Logout</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalStudents">0</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalAttempts">0</div>
+        <div class="stat-label">Total Attempts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="avgScore">0</div>
+        <div class="stat-label">Average Score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="topScore">0</div>
+        <div class="stat-label">Top Score</div>
+      </div>
+    </div>
+    <h3 style="margin-bottom:12px; text-align:left;">📋 All Attempts</h3>
+    <div style="overflow-x:auto;">
+      <table class="students-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Score</th>
+            <th>Hearts</th>
+            <th>Stations</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTableBody"></tbody>
+      </table>
+    </div>
+    <button class="btn btn-danger" onclick="clearAllData()" style="margin-top:16px;">🗑️ Clear All Data</button>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   GAME DATA
+============================================ */
+const TEACHER_PASSWORD = '199019';
+const TOTAL_HEARTS = 5;
+const TIME_PER_QUESTION = 30;
+
+const stations = [
+  {
+    id: 0, name: 'Alex', emoji: '🤖', color: '#4A90D9', title: 'Hardware vs Software',
+    questions: [
+      { q: 'Which one is considered Hardware?', options: ['Windows', 'The Monitor', 'Google Chrome', 'Microsoft Word'], correct: 1, hint: 'It is something you can touch and feel.', explanation: 'Hardware represents the physical components that we can touch, such as the monitor, keyboard, and mouse. Software consists of programs and instructions.' },
+      { q: 'Which one is considered Software?', options: ['Keyboard', 'Mouse', 'WhatsApp', 'Speakers'], correct: 2, hint: 'It is a program, not a physical object.', explanation: 'Software is not a physical thing like hardware; it makes the hardware work as per user requirements by giving instructions. WhatsApp is an application software.' },
+      { q: 'What does Alex (the computer) need to work?', options: ['A bigger screen', 'Software', 'A new keyboard', 'A new mouse'], correct: 1, hint: 'Without it, hardware cannot perform useful tasks.', explanation: 'Without software, hardware devices cannot perform useful tasks. Software tells the computer what to do.' },
+      { q: 'Which of the following is a physical part of a computer?', options: ['Google Chrome', 'Operating System', 'The CPU', 'Microsoft Excel'], correct: 2, hint: 'You can touch it.', explanation: 'The CPU is a hardware component. Hardware = physical parts (keyboard, screen, mouse).' },
+      { q: 'Without software, hardware devices can:', options: ['Work faster', 'Not perform useful tasks', 'Work normally', 'Become software'], correct: 1, hint: 'Think about a body without a brain.', explanation: 'Without software, hardware devices cannot perform useful tasks. Software is essential for the computer to function.' },
+      { q: 'Which of these is NOT hardware?', options: ['Printer', 'Mouse', 'Antivirus Program', 'Monitor'], correct: 2, hint: 'It is a program.', explanation: 'Antivirus Programs are software, not hardware. They are examples of software people use every day.' },
+      { q: 'What is the relationship between hardware and software?', options: ['They are the same', 'Software tells hardware what to do', 'Hardware tells software what to do', 'They do not work together'], correct: 1, hint: 'Software gives instructions.', explanation: 'Software makes the hardware work as per user requirements by giving instructions.' },
+      { q: 'Which of these is an example of hardware?', options: ['Linux', 'Web Browser', 'Speakers', 'Media Player'], correct: 2, hint: 'It is a physical device.', explanation: 'Speakers are hardware components. Examples of software include Operating Systems, Web Browsers, Mobile Apps, Media Players, and Antivirus Programs.' }
+    ]
+  },
+  {
+    id: 1, name: 'Sofia', emoji: '🧠', color: '#9B59B6', title: 'What is Software?',
+    questions: [
+      { q: 'What does Sofia represent?', options: ['Hardware', 'Software', 'Printer', 'Screen'], correct: 1, hint: 'She carries a board with commands and codes.', explanation: 'Sofia represents Software - the programs and instructions that tell the computer what to do.' },
+      { q: 'Software is:', options: ['Something we can touch', 'Programs and instructions', 'A physical device', 'A screen'], correct: 1, hint: 'It is not physical.', explanation: 'Software consists of the programs and instructions that tell the computer what to do. It is not a physical thing like hardware.' },
+      { q: 'What is an essential part of every computer system?', options: ['Only hardware', 'Only software', 'Both hardware and software', 'Neither'], correct: 2, hint: 'Both are needed.', explanation: 'Software is an essential part of every computer system. While hardware represents the physical components, software consists of the programs and instructions.' },
+      { q: 'Which of the following is NOT an example of software?', options: ['Windows', 'Chrome', 'Keyboard', 'WhatsApp'], correct: 2, hint: 'It is a physical part.', explanation: 'A keyboard is hardware. Software examples include Operating Systems (Windows, Linux), Web Browsers (Chrome, Edge), Mobile Apps (WhatsApp, Instagram).' },
+      { q: 'What does software do?', options: ['It is a physical component', 'It tells hardware what to do', 'It replaces hardware', 'It is a screen'], correct: 1, hint: 'It gives instructions.', explanation: 'Software makes the hardware work as per user requirements by giving instructions.' },
+      { q: 'Which of these is used daily by people?', options: ['Only games', 'Only Word', 'Operating Systems, Browsers, and Apps', 'Nothing'], correct: 2, hint: 'Think about your phone.', explanation: 'People use software every day: Operating Systems (Windows, Linux), Web Browsers (Chrome, Edge), Mobile Apps (WhatsApp, Instagram), Media Players (YouTube, VLC), and Antivirus Programs.' },
+      { q: 'What is the main difference between hardware and software?', options: ['No difference', 'Hardware is physical, software is not', 'Software is physical', 'Hardware is a program'], correct: 1, hint: 'One can be touched.', explanation: 'Hardware = physical parts (keyboard, screen, mouse). Software = programs that tell hardware what to do.' },
+      { q: 'Which of these is a mobile app?', options: ['Windows', 'Linux', 'Instagram', 'BIOS'], correct: 2, hint: 'You use it on your phone.', explanation: 'Instagram is a mobile app. Examples of software include Mobile Apps (WhatsApp, Instagram).' }
+    ]
+  },
+  {
+    id: 2, name: 'Mr. OS', emoji: '👔', color: '#2C3E50', title: 'Operating System',
+    questions: [
+      { q: 'What does Mr. OS represent?', options: ['Application Software', 'Operating System', 'Hardware', 'Game'], correct: 1, hint: 'He is the manager.', explanation: 'Mr. OS represents the Operating System - a type of system software that manages a computer\'s hardware and software resources.' },
+      { q: 'Which of these is an Operating System?', options: ['Microsoft Word', 'Windows', 'Google Chrome', 'WhatsApp'], correct: 1, hint: 'It manages the computer.', explanation: 'Windows is an operating system. Other examples include macOS and Linux.' },
+      { q: 'What is the main function of an Operating System?', options: ['Playing games', 'Managing computer resources', 'Taking photos', 'Printing'], correct: 1, hint: 'It acts as a link between software and hardware.', explanation: 'An OS acts as a link between the software and the hardware. It manages a computer\'s hardware and software resources.' },
+      { q: 'Which of these is NOT a function of an Operating System?', options: ['Memory Management', 'Security', 'Cooking', 'File Management'], correct: 2, hint: 'It is not related to computers.', explanation: 'The main functions of OS are: Resource Management, Process Management, Memory Management, Security, File Management, and Device Management.' },
+      { q: 'The Operating System links between:', options: ['Hardware and Software', 'User and User', 'Game and Game', 'Nothing'], correct: 0, hint: 'It is in the middle.', explanation: 'An OS acts as a link between the software and the hardware.' },
+      { q: 'Which function of OS manages memory and CPU time?', options: ['Process Management', 'Resource Management', 'Security', 'File Management'], correct: 1, hint: 'It allocates resources.', explanation: 'Resource Management: The operating system manages and allocates memory, CPU time, and other hardware resources among the various programs and processes running on the computer.' },
+      { q: 'Which function of OS is responsible for starting and stopping processes?', options: ['Process Management', 'Memory Management', 'Security', 'Device Management'], correct: 0, hint: 'It controls scheduling.', explanation: 'Process Management: The operating system is responsible for starting, stopping, and managing processes and programs. It also controls the scheduling of processes.' },
+      { q: 'Which function of OS provides a secure environment?', options: ['File Management', 'Security', 'Memory Management', 'Resource Management'], correct: 1, hint: 'It protects data.', explanation: 'Security: The operating system provides a secure environment for the user, applications, and data by implementing security policies and mechanisms such as access controls and encryption.' },
+      { q: 'Which function of OS organizes and manages files?', options: ['File Management', 'Process Management', 'Security', 'Device Management'], correct: 0, hint: 'It deals with creation and deletion of files.', explanation: 'File Management: The operating system is responsible for organizing and managing the file system, including the creation, deletion, and manipulation of files and directories.' },
+      { q: 'Which function of OS manages input/output devices?', options: ['Device Management', 'Memory Management', 'Security', 'Process Management'], correct: 0, hint: 'It deals with printers and keyboards.', explanation: 'Device Management: The operating system manages input/output devices such as printers, keyboards, mice, and displays.' },
+      { q: 'Which of these is an Operating System?', options: ['macOS', 'Microsoft Word', 'Photoshop', 'VLC'], correct: 0, hint: 'It is system software.', explanation: 'macOS is an operating system. Other examples: Windows, Linux, iOS, Android.' },
+      { q: 'The Operating System is a type of:', options: ['Application Software', 'System Software', 'Hardware', 'Game'], correct: 1, hint: 'It manages the computer.', explanation: 'System software is the software that manages the computer\'s hardware and provides the foundation for other programs to work. The OS is a type of system software.' }
+    ]
+  },
+  {
+    id: 3, name: 'Mia', emoji: '🎨', color: '#E91E63', title: 'Application Software',
+    questions: [
+      { q: 'What does Mia represent?', options: ['System Software', 'Application Software', 'Hardware', 'Operating System'], correct: 1, hint: 'She helps users get things done.', explanation: 'Mia represents Application Software - software designed to help users perform specific tasks.' },
+      { q: 'Which of these is an Application Software?', options: ['Windows', 'Linux', 'Microsoft Word', 'BIOS'], correct: 2, hint: 'It helps you write documents.', explanation: 'Microsoft Word is an application software. Examples include Microsoft 365 for productivity, Google Chrome for web browsing.' },
+      { q: 'Who does Application Software help?', options: ['Hardware', 'The User', 'The OS', 'Nobody'], correct: 1, hint: 'It helps people perform tasks.', explanation: 'Application software is designed to help users perform specific tasks. It provides tools and features for activities such as writing, calculating, browsing the internet, communication, and design.' },
+      { q: 'Which of these is a Web Browser?', options: ['Word', 'Excel', 'Google Chrome', 'Photoshop'], correct: 2, hint: 'It helps you browse the internet.', explanation: 'Google Chrome is a web browser. Web Browsers provide secure, AI-optimized internet access.' },
+      { q: 'Which type of Application Software manages numerical data?', options: ['Word Processing', 'Spreadsheet', 'Presentation', 'Multimedia'], correct: 1, hint: 'Think about Excel.', explanation: 'Spreadsheet Software manages numerical data with AI-enhanced calculations.' },
+      { q: 'Which type of Application Software creates and edits documents?', options: ['Word Processing', 'Spreadsheet', 'Graphics', 'Simulation'], correct: 0, hint: 'Think about Word.', explanation: 'Word Processing Software creates and edits documents with advanced formatting.' },
+      { q: 'Which type of Application Software designs presentations?', options: ['Word Processing', 'Spreadsheet', 'Presentation', 'Multimedia'], correct: 2, hint: 'Think about PowerPoint.', explanation: 'Presentation Software designs interactive, multimedia-rich presentations.' },
+      { q: 'Which type of Application Software supports audio and video?', options: ['Multimedia', 'Spreadsheet', 'Word Processing', 'Simulation'], correct: 0, hint: 'It deals with media.', explanation: 'Multimedia Software supports audio, video, and AR/VR content creation.' },
+      { q: 'Which type of Application Software enables professional design?', options: ['Graphics', 'Spreadsheet', 'Word Processing', 'Web Browser'], correct: 0, hint: 'Think about Photoshop.', explanation: 'Graphics Software enables professional-grade design and 3D modeling.' },
+      { q: 'Which type of Application Software models real-world scenarios?', options: ['Simulation', 'Word Processing', 'Spreadsheet', 'Presentation'], correct: 0, hint: 'It is used for training.', explanation: 'Simulation Software models real-world scenarios for training or analysis.' }
+    ]
+  },
+  {
+    id: 4, name: 'Utility', emoji: '🔧', color: '#FF9800', title: 'Disk Management & Safety',
+    questions: [
+      { q: 'What does Utility represent?', options: ['Application Software', 'Utility Software', 'Hardware', 'Game'], correct: 1, hint: 'It helps with maintenance.', explanation: 'Utility represents Utility Software - helpful tools that keep everything working properly.' },
+      { q: 'What is the first step in Disk Management?', options: ['Shrink Volume', 'Right-click Windows icon and choose Disk Management', 'Format', 'Finish'], correct: 1, hint: 'You need to open the tool first.', explanation: 'Step 1: Right-click the Windows icon, then click Disk Management.' },
+      { q: 'What should you do BEFORE modifying partitions?', options: ['Delete everything', 'Backup important data', 'Turn off the computer', 'Buy a new hard drive'], correct: 1, hint: 'Safety first!', explanation: 'Backup important data before modifying partitions. This is a key safety instruction.' },
+      { q: 'What should you AVOID deleting?', options: ['Your files', 'System or recovery partitions', 'Games', 'Photos'], correct: 1, hint: 'They are important for the system.', explanation: 'Avoid deleting system or recovery partitions. This is a critical safety instruction.' },
+      { q: 'What does NTFS stand for in Disk Management?', options: ['A type of screen', 'A File System', 'A game', 'A program'], correct: 1, hint: 'It is used to format the volume.', explanation: 'NTFS is a File System used to format the volume in Disk Management.' },
+      { q: 'What is the second step in Disk Management?', options: ['Right-click the partition and select Shrink Volume', 'Format', 'Finish', 'Restart'], correct: 0, hint: 'You need to shrink the volume first.', explanation: 'Step 2: Right-click the hard disk partition that you want to shrink and select "Shrink Volume".' },
+      { q: 'What appears after shrinking a volume?', options: ['A new file', 'Unallocated space', 'A new game', 'Nothing'], correct: 1, hint: 'It is empty space.', explanation: 'After shrinking, you will get an unallocated volume (unallocated space).' },
+      { q: 'What should you select to create a new partition from unallocated space?', options: ['New Simple Volume', 'Delete Volume', 'Format', 'Shrink Volume'], correct: 0, hint: 'It creates a simple volume.', explanation: 'Step 4: Right-click on the unallocated space on your hard disk, and then select New Simple Volume.' },
+      { q: 'What do you assign to a new partition for easier access?', options: ['A color', 'A drive letter', 'A name', 'A password'], correct: 1, hint: 'Like E: or F:', explanation: 'You can assign a drive letter or drive path to your partition for easier access.' },
+      { q: 'What is the last step in creating a new partition?', options: ['Click Finish', 'Shrink Volume', 'Format', 'Restart'], correct: 0, hint: 'It completes the process.', explanation: 'Step 9: Click "Finish" to complete creating a new partition in Windows 10/11.' }
+    ]
+  },
+  {
+    id: 5, name: 'Final Boss', emoji: '🏆', color: '#FFD700', title: 'Mixed Challenge',
+    questions: [
+      { q: 'Who is the "manager" in our story?', options: ['Alex', 'Mr. OS', 'Mia', 'Utility'], correct: 1, hint: 'He wears a suit.', explanation: 'Mr. OS (Operating System) is the manager. It manages the computer\'s hardware and software resources.' },
+      { q: 'Who is the "body" in our story?', options: ['Sofia', 'Alex', 'Mr. OS', 'Mia'], correct: 1, hint: 'He is the computer.', explanation: 'Alex represents Hardware (the body). Hardware = physical parts (keyboard, screen, mouse).' },
+      { q: 'Who is the "brain" in our story?', options: ['Alex', 'Sofia', 'Mia', 'Utility'], correct: 1, hint: 'She gives instructions.', explanation: 'Sofia represents Software (the brain). Software = programs that tell hardware what to do.' },
+      { q: 'What is the difference between System and Application Software?', options: ['No difference', 'System manages, Application helps the user', 'Application is faster', 'System is easier'], correct: 1, hint: 'One works behind the scenes.', explanation: 'System Software works "behind the scenes" to keep the machine running. Application Software is what the user interacts with directly to get work done.' },
+      { q: 'Which of these is System Software?', options: ['Microsoft Word', 'Windows', 'Google Chrome', 'WhatsApp'], correct: 1, hint: 'It manages the computer.', explanation: 'Windows is System Software (Operating System). It manages the computer\'s hardware and provides the foundation for other programs.' },
+      { q: 'Which of these is Application Software?', options: ['Linux', 'BIOS', 'Microsoft Excel', 'Device Driver'], correct: 2, hint: 'It helps users with tasks.', explanation: 'Microsoft Excel is Application Software. It helps users manage numerical data.' },
+      { q: 'What is a feature of System Software?', options: ['Works closely with hardware', 'Only for games', 'No interaction with hardware', 'Only for browsing'], correct: 0, hint: 'It is close to the machine.', explanation: 'Features of System Software: Works closely with the computer hardware, designed to manage hardware and provide a platform for applications.' },
+      { q: 'Which of these is a Programming Language?', options: ['Windows', 'Python', 'Chrome', 'Word'], correct: 1, hint: 'It is used to write code.', explanation: 'Python is a programming language. Examples: Python, C++, Rust.' },
+      { q: 'What is a Programming Language Translator?', options: ['A game', 'A program that translates code', 'A screen', 'A printer'], correct: 1, hint: 'It translates between languages.', explanation: 'A Programming Language Translator translates code written in a programming language into machine language.' },
+      { q: 'Which of these is Firmware?', options: ['Windows', 'BIOS', 'Chrome', 'Word'], correct: 1, hint: 'It is built into hardware.', explanation: 'BIOS is Firmware - software built into hardware. Examples: BIOS, UEFI.' },
+      { q: 'What is the role of an Operating System?', options: ['Only playing games', 'Managing computer resources', 'Only browsing', 'Only printing'], correct: 1, hint: 'It manages everything.', explanation: 'An OS manages a computer\'s hardware and software resources. It provides common services for computer programs.' },
+      { q: 'You are now:', options: ['A beginner', 'A Computer Expert', 'A programmer', 'Nothing'], correct: 1, hint: 'You finished the game!', explanation: 'Congratulations! You have completed Alex\'s Software Adventure and are now a Computer Expert!' }
+    ]
+  }
+];
+
+let gameState = {
+  studentName: '', score: 0, hearts: TOTAL_HEARTS,
+  currentStation: 0, currentQuestion: 0, completedStations: [],
+  timer: null, timeLeft: TIME_PER_QUESTION, answered: false,
+  totalQuestions: 0, totalCorrect: 0, wrongQuestions: [], startTime: null
+};
+
+let audioContext = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function startGame() {
+  const nameInput = document.getElementById('studentName');
+  const name = nameInput.value.trim();
+  if (!name) {
+    playSound('wrong');
+    nameInput.style.borderColor = '#E74C3C';
+    nameInput.placeholder = '⚠️ Please enter your name!';
+    setTimeout(() => {
+      nameInput.style.borderColor = '#E2E8F0';
+      nameInput.placeholder = 'Enter your name...';
+    }, 2000);
+    return;
+  }
+  playSound('click');
+  gameState = {
+    studentName: name, score: 0, hearts: TOTAL_HEARTS,
+    currentStation: 0, currentQuestion: 0, completedStations: [],
+    timer: null, timeLeft: TIME_PER_QUESTION, answered: false,
+    totalQuestions: 0, totalCorrect: 0, wrongQuestions: [], startTime: Date.now()
+  };
+  document.getElementById('mapStudentName').textContent = name;
+  renderMap();
+  showScreen('mapScreen');
+}
+
+function renderMap() {
+  const container = document.getElementById('mapContainer');
+  container.innerHTML = '';
+  stations.forEach((station, index) => {
+    const isLocked = index > 0 && !gameState.completedStations.includes(index - 1);
+    const isCompleted = gameState.completedStations.includes(index);
+    const div = document.createElement('div');
+    div.className = 'station' + (isLocked ? ' locked' : '') + (isCompleted ? ' completed' : '');
+    div.style.borderColor = isCompleted ? station.color : 'transparent';
+    div.innerHTML = `
+      <span class="station-emoji">${station.emoji}</span>
+      <div class="station-name">${station.name}</div>
+      <div class="station-desc">${station.title}</div>
+    `;
+    if (!isLocked) {
+      div.onclick = () => { playSound('click'); startStation(index); };
+    }
+    container.appendChild(div);
+  });
+  const progress = (gameState.completedStations.length / stations.length) * 100;
+  document.getElementById('mapProgress').style.width = progress + '%';
+}
+
+function startStation(stationIndex) {
+  gameState.currentStation = stationIndex;
+  gameState.currentQuestion = 0;
+  showScreen('gameScreen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const station = stations[gameState.currentStation];
+  const question = station.questions[gameState.currentQuestion];
+  if (!question) { completeStation(); return; }
+  gameState.answered = false;
+  document.getElementById('characterEmoji').textContent = station.emoji;
+  document.getElementById('characterEmoji').className = 'character-emoji';
+  document.getElementById('characterName').textContent = station.name;
+  document.getElementById('characterName').style.color = station.color;
+  updateHUD();
+  const totalQ = station.questions.length;
+  const progress = (gameState.currentQuestion / totalQ) * 100;
+  document.getElementById('gameProgress').style.width = progress + '%';
+  document.getElementById('questionText').textContent = question.q;
+  const optionsContainer = document.getElementById('optionsContainer');
+  optionsContainer.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  question.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    optionsContainer.appendChild(btn);
+  });
+  document.getElementById('feedbackBox').classList.remove('show');
+  document.getElementById('nextBtn').style.display = 'none';
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(gameState.timer);
+  gameState.timeLeft = TIME_PER_QUESTION;
+  document.getElementById('timerDisplay').textContent = gameState.timeLeft;
+  gameState.timer = setInterval(() => {
+    gameState.timeLeft--;
+    document.getElementById('timerDisplay').textContent = gameState.timeLeft;
+    document.getElementById('timerDisplay').style.color = gameState.timeLeft <= 10 ? '#E74C3C' : '#4A90D9';
+    if (gameState.timeLeft <= 0) {
+      clearInterval(gameState.timer);
+      if (!gameState.answered) timeUp();
+    }
+  }, 1000);
+}
+
+function timeUp() {
+  gameState.answered = true;
+  const station = stations[gameState.currentStation];
+  const question = station.questions[gameState.currentQuestion];
+  playSound('wrong');
+  gameState.hearts--;
+  updateHUD();
+  const options = document.querySelectorAll('.option');
+  options[question.correct].classList.add('correct');
+  options.forEach(o => o.classList.add('disabled'));
+  document.getElementById('characterEmoji').classList.add('sad');
+  document.getElementById('feedbackBox').className = 'feedback wrong show';
+  document.getElementById('feedbackTitle').textContent = "⏰ Time's Up!";
+  document.getElementById('feedbackText').textContent = question.explanation;
+  gameState.wrongQuestions.push({ station: station.name, question: question.q, correctAnswer: question.options[question.correct] });
+  checkGameOver();
+  if (gameState.hearts > 0) document.getElementById('nextBtn').style.display = 'inline-flex';
+}
+
+function selectAnswer(index) {
+  if (gameState.answered) return;
+  gameState.answered = true;
+  clearInterval(gameState.timer);
+  const station = stations[gameState.currentStation];
+  const question = station.questions[gameState.currentQuestion];
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.classList.add('disabled'));
+  if (index === question.correct) {
+    playSound('correct');
+    options[index].classList.add('correct');
+    document.getElementById('characterEmoji').classList.add('happy');
+    gameState.score += 10;
+    gameState.totalCorrect++;
+    if (gameState.totalCorrect > 0 && gameState.totalCorrect % 5 === 0) gameState.score += 20;
+    document.getElementById('feedbackBox').className = 'feedback correct show';
+    document.getElementById('feedbackTitle').textContent = '✅ Correct! +10 points';
+    document.getElementById('feedbackText').textContent = question.explanation;
+  } else {
+    playSound('wrong');
+    options[index].classList.add('wrong');
+    options[question.correct].classList.add('correct');
+    document.getElementById('characterEmoji').classList.add('sad');
+    gameState.hearts--;
+    document.getElementById('feedbackBox').className = 'feedback wrong show';
+    document.getElementById('feedbackTitle').textContent = '❌ Wrong! -1 heart';
+    document.getElementById('feedbackText').textContent = question.explanation;
+    gameState.wrongQuestions.push({ station: station.name, question: question.q, correctAnswer: question.options[question.correct] });
+  }
+  gameState.totalQuestions++;
+  updateHUD();
+  checkGameOver();
+  if (gameState.hearts > 0) document.getElementById('nextBtn').style.display = 'inline-flex';
+}
+
+function updateHUD() {
+  const heartsStr = '❤️'.repeat(Math.max(0, gameState.hearts)) + '🖤'.repeat(Math.max(0, TOTAL_HEARTS - gameState.hearts));
+  document.getElementById('heartsDisplay').textContent = heartsStr;
+  document.getElementById('scoreDisplay').textContent = gameState.score;
+}
+
+function nextQuestion() {
+  playSound('click');
+  gameState.currentQuestion++;
+  const station = stations[gameState.currentStation];
+  if (gameState.currentQuestion >= station.questions.length) completeStation();
+  else renderQuestion();
+}
+
+function completeStation() {
+  playSound('win');
+  if (!gameState.completedStations.includes(gameState.currentStation)) {
+    gameState.completedStations.push(gameState.currentStation);
+  }
+  gameState.score += 50;
+  if (gameState.completedStations.length === stations.length) {
+    setTimeout(() => showVictory(), 800);
+  } else {
+    renderMap();
+    showScreen('mapScreen');
+  }
+}
+
+function checkGameOver() {
+  if (gameState.hearts <= 0) {
+    clearInterval(gameState.timer);
+    setTimeout(() => {
+      playSound('gameover');
+      document.getElementById('gameOverScore').textContent = gameState.score;
+      saveAttempt(false);
+      showScreen('gameOverScreen');
+    }, 1500);
+  }
+}
+
+function showVictory() {
+  clearInterval(gameState.timer);
+  document.getElementById('certStudentName').textContent = gameState.studentName;
+  document.getElementById('certScore').textContent = gameState.score;
+  document.getElementById('certDate').textContent = new Date().toLocaleDateString('en-GB');
+  saveAttempt(true);
+  playSound('victory');
+  showScreen('victoryScreen');
+  createConfetti();
+}
+
+function restartGame() {
+  playSound('click');
+  showScreen('splashScreen');
+  document.getElementById('studentName').value = '';
+}
+
+function saveAttempt(completed) {
+  const attempts = JSON.parse(localStorage.getItem('alexGameAttempts') || '[]');
+  const attempt = {
+    id: Date.now(),
+    studentName: gameState.studentName,
+    score: gameState.score,
+    hearts: gameState.hearts,
+    completed: completed,
+    stationsCompleted: gameState.completedStations.length,
+    totalQuestions: gameState.totalQuestions,
+    totalCorrect: gameState.totalCorrect,
+    wrongQuestions: gameState.wrongQuestions,
+    date: new Date().toLocaleString('en-GB'),
+    duration: Math.round((Date.now() - gameState.startTime) / 1000)
+  };
+  attempts.push(attempt);
+  localStorage.setItem('alexGameAttempts', JSON.stringify(attempts));
+}
+
+function createConfetti() {
+  const colors = ['#4A90D9', '#9B59B6', '#E91E63', '#FF9800', '#FFD700', '#27AE60'];
+  for (let i = 0; i < 50; i++) {
+    const confetti = document.createElement('div');
+    confetti.style.position = 'fixed';
+    confetti.style.width = '10px';
+    confetti.style.height = '10px';
+    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.left = Math.random() * 100 + 'vw';
+    confetti.style.top = '-10px';
+    confetti.style.borderRadius = '50%';
+    confetti.style.zIndex = '9999';
+    confetti.style.pointerEvents = 'none';
+    confetti.style.transition = 'all 3s ease';
+    document.body.appendChild(confetti);
+    setTimeout(() => {
+      confetti.style.top = '100vh';
+      confetti.style.transform = `rotate(${Math.random() * 720}deg)`;
+      confetti.style.opacity = '0';
+    }, 50);
+    setTimeout(() => confetti.remove(), 3500);
+  }
+}
+
+function downloadCertificate() {
+  playSound('click');
+  const printWindow = window.open('', '', 'width=800,height=600');
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>Certificate - ${gameState.studentName}</title>
+      <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 40px; text-align: center; background: #FFF9E6; }
+        .cert { border: 8px double #FFD700; padding: 40px; border-radius: 24px; }
+        h2 { color: #F39C12; font-size: 2rem; }
+        .name { font-size: 2.5rem; font-weight: 800; color: #4A90D9; margin: 20px 0; border-bottom: 4px dotted #4A90D9; display: inline-block; padding: 0 20px 8px; }
+        .text { color: #2D3748; font-size: 1.1rem; line-height: 1.8; margin: 16px 0; }
+        .score { font-size: 1.5rem; font-weight: 800; color: #27AE60; margin: 16px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="cert">
+        <h2>🎓 Certificate of Achievement 🎓</h2>
+        <p class="text">This certifies that</p>
+        <div class="name">${gameState.studentName}</div>
+        <p class="text">has successfully completed</p>
+        <p style="font-size:1.3rem; font-weight:800; color:#4A90D9;">Alex's Software Adventure</p>
+        <p class="score">⭐ Score: ${gameState.score}</p>
+        <p class="text" style="font-size:0.9rem; color:#718096;">Date: ${new Date().toLocaleDateString('en-GB')}</p>
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+  setTimeout(() => printWindow.print(), 500);
+}
+
+function initAudio() {
+  if (!audioContext) {
+    try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.log(e); }
+  }
+}
+
+function playSound(type) {
+  try {
+    initAudio();
+    if (!audioContext) return;
+    const ctx = audioContext;
+    const now = ctx.currentTime;
+    if (type === 'correct') { playTone(ctx, 523.25, now, 0.15); playTone(ctx, 659.25, now + 0.15, 0.2); }
+    else if (type === 'wrong') { playTone(ctx, 311.13, now, 0.2, 'sawtooth'); playTone(ctx, 207.65, now + 0.2, 0.3, 'sawtooth'); }
+    else if (type === 'click') { playTone(ctx, 800, now, 0.05, 'sine', 0.1); }
+    else if (type === 'win') { playTone(ctx, 523.25, now, 0.1); playTone(ctx, 659.25, now + 0.1, 0.1); playTone(ctx, 783.99, now + 0.2, 0.1); playTone(ctx, 1046.50, now + 0.3, 0.3); }
+    else if (type === 'victory') { playTone(ctx, 523.25, now, 0.15); playTone(ctx, 523.25, now + 0.15, 0.15); playTone(ctx, 523.25, now + 0.3, 0.15); playTone(ctx, 523.25, now + 0.45, 0.4); playTone(ctx, 415.30, now + 0.85, 0.15); playTone(ctx, 466.16, now + 1.0, 0.15); playTone(ctx, 523.25, now + 1.15, 0.6); }
+    else if (type === 'gameover') { playTone(ctx, 392, now, 0.3, 'sawtooth'); playTone(ctx, 349.23, now + 0.3, 0.3, 'sawtooth'); playTone(ctx, 311.13, now + 0.6, 0.3, 'sawtooth'); playTone(ctx, 261.63, now + 0.9, 0.6, 'sawtooth'); }
+  } catch (e) { console.log('Audio error:', e); }
+}
+
+function playTone(ctx, freq, startTime, duration, type = 'sine', volume = 0.2) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function showTeacherLogin() {
+  playSound('click');
+  document.getElementById('teacherPassword').value = '';
+  showScreen('teacherLoginScreen');
+}
+
+function teacherLogin() {
+  const password = document.getElementById('teacherPassword').value;
+  if (password === TEACHER_PASSWORD) {
+    playSound('correct');
+    loadDashboard();
+    showScreen('dashboardScreen');
+  } else {
+    playSound('wrong');
+    const input = document.getElementById('teacherPassword');
+    input.style.borderColor = '#E74C3C';
+    input.value = '';
+    input.placeholder = '⚠️ Wrong password! Try again.';
+    setTimeout(() => {
+      input.style.borderColor = '#E2E8F0';
+      input.placeholder = 'Enter password...';
+    }, 2000);
+  }
+}
+
+function loadDashboard() {
+  const attempts = JSON.parse(localStorage.getItem('alexGameAttempts') || '[]');
+  const uniqueStudents = [...new Set(attempts.map(a => a.studentName))];
+  const totalAttempts = attempts.length;
+  const avgScore = attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / attempts.length) : 0;
+  const topScore = attempts.length > 0 ? Math.max(...attempts.map(a => a.score)) : 0;
+  document.getElementById('totalStudents').textContent = uniqueStudents.length;
+  document.getElementById('totalAttempts').textContent = totalAttempts;
+  document.getElementById('avgScore').textContent = avgScore;
+  document.getElementById('topScore').textContent = topScore;
+  const tbody = document.getElementById('studentsTableBody');
+  tbody.innerHTML = '';
+  if (attempts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:#718096;">📭 No attempts yet. Students will appear here after playing.</td></tr>';
+    return;
+  }
+  const sorted = [...attempts].sort((a, b) => b.score - a.score);
+  sorted.forEach((attempt, index) => {
+    const rank = index + 1;
+    let rankClass = 'rank-other';
+    if (rank === 1) rankClass = 'rank-1';
+    else if (rank === 2) rankClass = 'rank-2';
+    else if (rank === 3) rankClass = 'rank-3';
+    const heartsStr = '❤️'.repeat(Math.max(0, attempt.hearts)) + '🖤'.repeat(Math.max(0, TOTAL_HEARTS - attempt.hearts));
+    const statusEmoji = attempt.completed ? '🏆' : '😢';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+      <td><strong>${escapeHtml(attempt.studentName)}</strong><br><span style="font-size:0.8rem; color:#718096;">${statusEmoji} ${attempt.completed ? 'Completed' : 'Game Over'}</span></td>
+      <td><strong style="color:#F39C12;">⭐ ${attempt.score}</strong></td>
+      <td style="font-size:0.85rem;">${heartsStr}</td>
+      <td>${attempt.stationsCompleted}/6</td>
+      <td style="font-size:0.85rem; color:#718096;">${attempt.date}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function clearAllData() {
+  if (confirm('⚠️ Are you sure you want to delete ALL student data? This cannot be undone!')) {
+    localStorage.removeItem('alexGameAttempts');
+    playSound('click');
+    loadDashboard();
+    alert('✅ All data cleared successfully!');
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('splashScreen').classList.contains('active')) startGame();
+    else if (document.getElementById('teacherLoginScreen').classList.contains('active')) teacherLogin();
+  }
+});
+</script>
+
+</body>
+</html>
